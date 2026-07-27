@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Box, Typography, Button, Popover } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Typography, Button, Popover, CircularProgress } from '@mui/material';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { tokens } from '../config/tokens';
 
@@ -41,33 +41,104 @@ const NetworkDot: React.FC = () => (
   />
 );
 
-interface WalletOption {
-  name: string;
-  description: string;
-}
+/** Detect available Midnight-compatible wallets from window.midnight */
+function detectWallets(): Array<{ id: string; name: string; brand: 'lace' | '1am' | 'other'; api: any }> {
+  const found: Array<{ id: string; name: string; brand: 'lace' | '1am' | 'other'; api: any }> = [];
+  if (!window.midnight) return found;
 
-const wallets: WalletOption[] = [
-  { name: 'Lace Wallet', description: 'Midnight-compatible browser extension' },
-  { name: '1AM Wallet', description: 'Privacy-first mobile wallet' },
-];
+  for (const [key, wallet] of Object.entries(window.midnight)) {
+    if (wallet && typeof wallet === 'object' && 'apiVersion' in wallet) {
+      // Read the real name from the wallet API object
+      const rawName = (wallet as any).name || (wallet as any).walletName || key;
+      const lower = String(rawName).toLowerCase();
+
+      // Determine brand for styling
+      let brand: 'lace' | '1am' | 'other' = 'other';
+      let displayName = String(rawName);
+
+      if (lower.includes('lace') || lower.includes('midnight')) {
+        brand = 'lace';
+        displayName = 'Lace Wallet';
+      } else if (lower.includes('1am') || lower.includes('oneam')) {
+        brand = '1am';
+        displayName = '1AM Wallet';
+      }
+
+      found.push({ id: key, name: displayName, brand, api: wallet });
+    }
+  }
+
+  // If nothing detected, show both as installable options
+  if (found.length === 0) {
+    return [
+      { id: 'lace', name: 'Lace Wallet', brand: 'lace', api: null },
+      { id: '1am', name: '1AM Wallet', brand: '1am', api: null },
+    ];
+  }
+  return found;
+}
 
 export const TopNavigation: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [connectedWallet, setConnectedWallet] = useState<string | null>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [connectedAddress, setConnectedAddress] = useState<string | null>(null);
+  const [connecting, setConnecting] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleOpen = (e: React.MouseEvent<HTMLElement>) => setAnchorEl(e.currentTarget);
-  const handleClose = () => setAnchorEl(null);
+  const handleOpen = (e: React.MouseEvent<HTMLElement>) => {
+    setError(null);
+    setAnchorEl(e.currentTarget);
+  };
+  const handleClose = () => { setAnchorEl(null); setConnecting(null); };
 
-  const handleConnect = (walletName: string) => {
-    setConnectedWallet(walletName);
-    handleClose();
+  const handleConnect = async (wallet: { id: string; name: string; api: any }) => {
+    if (!wallet.api) {
+      // Wallet not installed — open install page
+      if (wallet.id === 'lace') {
+        window.open('https://chromewebstore.google.com/detail/midnight-lace/ejidikmeadkeeokldljcoafnlhkdlofd', '_blank');
+      } else {
+        window.open('https://midnight.network/wallets', '_blank');
+      }
+      return;
+    }
+
+    setConnecting(wallet.name);
+    setError(null);
+    try {
+      const networkId = (import.meta as any).env?.VITE_NETWORK_ID || 'preprod';
+      const connectedAPI = await wallet.api.connect(networkId);
+      const status = await connectedAPI.getConnectionStatus();
+
+      if (status) {
+        // Try to get address
+        let addr: string | null = null;
+        try {
+          const addresses = await connectedAPI.getShieldedAddresses();
+          if (addresses?.shieldedCoinPublicKey) {
+            const pk = addresses.shieldedCoinPublicKey;
+            addr = pk.slice(0, 8) + '…' + pk.slice(-6);
+          }
+        } catch {
+          // Address fetch optional
+        }
+
+        setConnectedWallet(wallet.name);
+        setConnectedAddress(addr);
+        handleClose();
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Connection failed. Is the wallet extension enabled?');
+      setConnecting(null);
+    }
   };
 
   const handleDisconnect = () => {
     setConnectedWallet(null);
+    setConnectedAddress(null);
     handleClose();
   };
+
+  const wallets = detectWallets();
 
   return (
     <Box
@@ -138,7 +209,6 @@ export const TopNavigation: React.FC = () => {
 
         {/* Connect Wallet Button */}
         <Button
-          ref={buttonRef}
           onClick={handleOpen}
           startIcon={<AccountBalanceWalletIcon sx={{ fontSize: '16px !important' }} />}
           sx={{
@@ -182,7 +252,7 @@ export const TopNavigation: React.FC = () => {
                 border: `1px solid ${tokens.color.border.subtle}`,
                 borderRadius: tokens.radius.lg,
                 boxShadow: tokens.shadow.lg,
-                minWidth: 260,
+                minWidth: 280,
                 overflow: 'hidden',
               },
             },
@@ -193,11 +263,27 @@ export const TopNavigation: React.FC = () => {
               {connectedWallet ? 'Connected' : 'Select Wallet'}
             </Typography>
 
+            {/* Error */}
+            {error && (
+              <Box sx={{ mx: 1.5, mb: 1, p: 1.5, borderRadius: tokens.radius.md, background: tokens.color.accent.redMuted, border: `1px solid ${tokens.color.border.error}` }}>
+                <Typography sx={{ fontSize: '0.75rem', color: tokens.color.accent.red }}>{error}</Typography>
+              </Box>
+            )}
+
             {connectedWallet ? (
               <>
                 <Box sx={{ px: 1.5, py: 1, mb: 0.5 }}>
-                  <Typography sx={{ fontSize: '0.8125rem', fontWeight: 600, color: tokens.color.text.primary }}>{connectedWallet}</Typography>
-                  <Typography sx={{ fontSize: '0.6875rem', color: tokens.color.text.tertiary, mt: 0.25 }}>Preprod Testnet</Typography>
+                  <Typography sx={{ fontSize: '0.8125rem', fontWeight: 600, color: tokens.color.text.primary }}>
+                    {connectedWallet}
+                  </Typography>
+                  {connectedAddress && (
+                    <Typography sx={{ fontSize: '0.6875rem', fontFamily: tokens.font.mono, color: tokens.color.text.tertiary, mt: 0.25 }}>
+                      {connectedAddress}
+                    </Typography>
+                  )}
+                  <Typography sx={{ fontSize: '0.6875rem', color: tokens.color.text.tertiary, mt: 0.25 }}>
+                    Preprod Testnet
+                  </Typography>
                 </Box>
                 <Box
                   component="button"
@@ -224,9 +310,10 @@ export const TopNavigation: React.FC = () => {
             ) : (
               wallets.map((w) => (
                 <Box
-                  key={w.name}
+                  key={w.id}
                   component="button"
-                  onClick={() => handleConnect(w.name)}
+                  onClick={() => handleConnect(w)}
+                  disabled={connecting === w.name}
                   sx={{
                     all: 'unset',
                     display: 'flex',
@@ -235,10 +322,11 @@ export const TopNavigation: React.FC = () => {
                     width: '100%',
                     px: 1.5,
                     py: 1.25,
-                    cursor: 'pointer',
+                    cursor: connecting ? 'wait' : 'pointer',
                     borderRadius: tokens.radius.md,
                     transition: tokens.transition.fast,
                     boxSizing: 'border-box',
+                    opacity: connecting && connecting !== w.name ? 0.4 : 1,
                     '&:hover': { background: 'rgba(255,255,255,0.04)' },
                     '&:focus-visible': { outline: `2px solid ${tokens.color.accent.violet}`, outlineOffset: '-2px' },
                   }}
@@ -248,9 +336,11 @@ export const TopNavigation: React.FC = () => {
                       width: 32,
                       height: 32,
                       borderRadius: tokens.radius.sm,
-                      background: w.name === 'Lace Wallet'
+                      background: w.brand === 'lace'
                         ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
-                        : 'linear-gradient(135deg, #0ea5e9, #06b6d4)',
+                        : w.brand === '1am'
+                          ? 'linear-gradient(135deg, #0ea5e9, #06b6d4)'
+                          : `linear-gradient(135deg, ${tokens.color.accent.violet}, #6d28d9)`,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -258,13 +348,20 @@ export const TopNavigation: React.FC = () => {
                     }}
                   >
                     <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: '#fff' }}>
-                      {w.name === 'Lace Wallet' ? 'L' : '1A'}
+                      {w.brand === 'lace' ? 'L' : w.brand === '1am' ? '1A' : w.name.slice(0, 2).toUpperCase()}
                     </Typography>
                   </Box>
-                  <Box>
-                    <Typography sx={{ fontSize: '0.8125rem', fontWeight: 600, color: tokens.color.text.primary }}>{w.name}</Typography>
-                    <Typography sx={{ fontSize: '0.6875rem', color: tokens.color.text.tertiary }}>{w.description}</Typography>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography sx={{ fontSize: '0.8125rem', fontWeight: 600, color: tokens.color.text.primary }}>
+                      {w.name}
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.6875rem', color: tokens.color.text.tertiary }}>
+                      {w.api ? 'Detected — click to connect' : 'Not installed — click to install'}
+                    </Typography>
                   </Box>
+                  {connecting === w.name && (
+                    <CircularProgress size={16} sx={{ color: tokens.color.accent.violet, flexShrink: 0 }} />
+                  )}
                 </Box>
               ))
             )}
