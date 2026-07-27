@@ -1,0 +1,22 @@
+{
+  "name": "@midnight-ntwrk/voting-cli",
+  "version": "0.1.0",
+  "author": "IOG",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node -e \"fs.rmSync('dist', { recursive: true, force: true })\" && tsc --project tsconfig.build.json",
+    "ci": "npm run typecheck && npm run lint && npm run build",
+    "lint": "eslint src",
+    "prepack": "npm run build",
+    "standalone": "node --max-old-space-size=8192 --experimental-specifier-resolution=node --loader ts-node/esm src/launcher/standalone.ts",
+    "preview-remote": "node --max-old-space-size=8192 --experimental-specifier-resolution=node --loader ts-node/esm src/launcher/preview.ts",
+    "preprod-remote": "node --max-old-space-size=8192 --experimental-specifier-resolution=node --loader ts-node/esm src/launcher/preprod.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/json-schema": "^7.0.15",
+    "@types/node": "^25.3.0"
+  }
+}
