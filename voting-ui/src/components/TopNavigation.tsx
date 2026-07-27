@@ -3,21 +3,28 @@ import { Box, Typography, Button, Popover, CircularProgress } from '@mui/materia
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { tokens } from '../config/tokens';
 
-const NavLink: React.FC<{ label: string; active?: boolean }> = ({ label, active }) => (
+interface NavLinkProps {
+  label: string;
+  active?: boolean;
+  onClick?: () => void;
+}
+
+const NavLink: React.FC<NavLinkProps> = ({ label, active, onClick }) => (
   <Typography
-    component="a"
-    href="#"
-    onClick={(e: React.MouseEvent) => e.preventDefault()}
+    component="button"
+    onClick={onClick}
     sx={{
+      all: 'unset',
+      cursor: 'pointer',
       fontSize: '0.8125rem',
-      fontWeight: 500,
+      fontWeight: active ? 700 : 500,
       color: active ? tokens.color.text.primary : tokens.color.text.tertiary,
-      textDecoration: 'none',
       px: 1.5,
       py: 0.75,
       borderRadius: tokens.radius.sm,
+      background: active ? 'rgba(255,255,255,0.06)' : 'transparent',
       transition: tokens.transition.fast,
-      '&:hover': { color: tokens.color.text.primary, background: 'rgba(255,255,255,0.04)' },
+      '&:hover': { color: tokens.color.text.primary, background: 'rgba(255,255,255,0.08)' },
     }}
   >
     {label}
@@ -78,7 +85,15 @@ function detectWallets(): Array<{ id: string; name: string; brand: 'lace' | '1am
   return found;
 }
 
-export const TopNavigation: React.FC = () => {
+export interface TopNavigationProps {
+  activeTab?: 'proposals' | 'activity' | 'docs';
+  onTabChange?: (tab: 'proposals' | 'activity' | 'docs') => void;
+}
+
+export const TopNavigation: React.FC<TopNavigationProps> = ({
+  activeTab = 'proposals',
+  onTabChange,
+}) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [connectedWallet, setConnectedWallet] = useState<string | null>(null);
   const [connectedAddress, setConnectedAddress] = useState<string | null>(null);
@@ -161,7 +176,21 @@ export const TopNavigation: React.FC = () => {
     >
       {/* Left: Logo + Nav */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box
+          component="button"
+          onClick={() => onTabChange?.('proposals')}
+          sx={{
+            all: 'unset',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            borderRadius: tokens.radius.sm,
+            p: 0.5,
+            transition: tokens.transition.fast,
+            '&:hover': { opacity: 0.85 },
+          }}
+        >
           <Box
             sx={{
               width: 22,
@@ -181,9 +210,21 @@ export const TopNavigation: React.FC = () => {
         </Box>
 
         <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 0.5 }}>
-          <NavLink label="Proposals" active />
-          <NavLink label="Activity" />
-          <NavLink label="Docs" />
+          <NavLink
+            label="Proposals"
+            active={activeTab === 'proposals'}
+            onClick={() => onTabChange?.('proposals')}
+          />
+          <NavLink
+            label="Activity"
+            active={activeTab === 'activity'}
+            onClick={() => onTabChange?.('activity')}
+          />
+          <NavLink
+            label="Docs"
+            active={activeTab === 'docs'}
+            onClick={() => onTabChange?.('docs')}
+          />
         </Box>
       </Box>
 

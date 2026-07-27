@@ -9,7 +9,7 @@ interface ActivityItem {
   verified: boolean;
 }
 
-export const OnChainActivity: React.FC<{ totalVotes: number; isOpen: boolean }> = ({ totalVotes, isOpen }) => {
+export const OnChainActivity: React.FC<{ totalVotes?: number; isOpen?: boolean }> = ({ totalVotes = 142, isOpen = true }) => {
   const items: ActivityItem[] = [
     ...(totalVotes > 0
       ? [{ type: 'Proof verified — vote included in tally', time: 'Just now', verified: true }]

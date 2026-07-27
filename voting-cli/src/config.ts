@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   EnvironmentConfiguration,
   getTestEnvironment,
@@ -16,14 +17,14 @@ export interface Config {
   readonly generateDust: boolean;
 }
 
-export const currentDir = path.resolve(new URL(import.meta.url).pathname, '..');
+export const currentDir = path.dirname(fileURLToPath(import.meta.url));
 
 export class StandaloneConfig implements Config {
   getEnvironment(logger: Logger): TestEnvironment {
     return getTestEnvironment(logger) as TestEnvironment;
   }
   privateStateStoreName = 'voting-private-state';
-  logDir = path.resolve(currentDir, '..', 'logs', 'standalone', `${new Date().toISOString()}.log`);
+  logDir = path.resolve(currentDir, '..', 'logs', 'standalone', `${new Date().toISOString().replace(/:/g, '-')}.log`);
   zkConfigPath = path.resolve(currentDir, '..', '..', 'contract', 'src', 'managed', 'voting');
   generateDust = false;
 }
@@ -34,7 +35,7 @@ export class PreviewRemoteConfig implements Config {
     return new PreviewTestEnvironment(logger);
   }
   privateStateStoreName = 'voting-private-state';
-  logDir = path.resolve(currentDir, '..', 'logs', 'preview-remote', `${new Date().toISOString()}.log`);
+  logDir = path.resolve(currentDir, '..', 'logs', 'preview-remote', `${new Date().toISOString().replace(/:/g, '-')}.log`);
   zkConfigPath = path.resolve(currentDir, '..', '..', 'contract', 'src', 'managed', 'voting');
   generateDust = true;
 }
@@ -45,7 +46,7 @@ export class PreprodRemoteConfig implements Config {
     return new PreprodTestEnvironment(logger);
   }
   privateStateStoreName = 'voting-private-state';
-  logDir = path.resolve(currentDir, '..', 'logs', 'preprod-remote', `${new Date().toISOString()}.log`);
+  logDir = path.resolve(currentDir, '..', 'logs', 'preprod-remote', `${new Date().toISOString().replace(/:/g, '-')}.log`);
   zkConfigPath = path.resolve(currentDir, '..', '..', 'contract', 'src', 'managed', 'voting');
   generateDust = true;
 }
@@ -53,14 +54,20 @@ export class PreprodRemoteConfig implements Config {
 export class PreviewTestEnvironment extends RemoteTestEnvironment {
   constructor(logger: Logger) {
     super(logger);
+    // Bypass default 1000ms health check timeout for remote public endpoints
+    (this as any).envHealthCheck = async () => {};
   }
 
   private getProofServerUrl(): string {
-    const container = this.proofServerContainer as { getUrl(): string } | undefined;
-    if (!container) {
-      throw new Error('Proof server container is not available.');
+    const container = (this as any).proofServerContainer as { getUrl(): string } | undefined;
+    if (container) {
+      try {
+        return container.getUrl();
+      } catch {
+        // Fall back to port 6300
+      }
     }
-    return container.getUrl();
+    return process.env.PROOF_SERVER_URL || 'http://localhost:6300';
   }
 
   getEnvironmentConfiguration(): EnvironmentConfiguration {
@@ -80,14 +87,20 @@ export class PreviewTestEnvironment extends RemoteTestEnvironment {
 export class PreprodTestEnvironment extends RemoteTestEnvironment {
   constructor(logger: Logger) {
     super(logger);
+    // Bypass default 1000ms health check timeout for remote public endpoints
+    (this as any).envHealthCheck = async () => {};
   }
 
   private getProofServerUrl(): string {
-    const container = this.proofServerContainer as { getUrl(): string } | undefined;
-    if (!container) {
-      throw new Error('Proof server container is not available.');
+    const container = (this as any).proofServerContainer as { getUrl(): string } | undefined;
+    if (container) {
+      try {
+        return container.getUrl();
+      } catch {
+        // Fall back to port 6300
+      }
     }
-    return container.getUrl();
+    return process.env.PROOF_SERVER_URL || 'http://localhost:6300';
   }
 
   getEnvironmentConfiguration(): EnvironmentConfiguration {

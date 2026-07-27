@@ -16,6 +16,11 @@
       "contract"
     ]
   },
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "deploy-direct": "npm run deploy-direct --workspace=@midnight-ntwrk/voting-cli",
+    "preprod-remote": "npm run preprod-remote --workspace=@midnight-ntwrk/voting-cli"
+  },
   "dependencies": {
     "@midnight-ntwrk/dapp-connector-api": "4.0.1",
     "@midnight-ntwrk/midnight-js-contracts": "4.1.1",

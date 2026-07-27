@@ -7,3 +7,4 @@ export { ResultsVisualization } from './ResultsVisualization';
 export { VotingPanel } from './VotingPanel';
 export { PrivacyGuarantee } from './PrivacyGuarantee';
 export { OnChainActivity } from './OnChainActivity';
+export { DocsView } from './DocsView';

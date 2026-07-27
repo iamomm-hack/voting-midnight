@@ -13,6 +13,7 @@
     "standalone": "node --max-old-space-size=8192 --experimental-specifier-resolution=node --loader ts-node/esm src/launcher/standalone.ts",
     "preview-remote": "node --max-old-space-size=8192 --experimental-specifier-resolution=node --loader ts-node/esm src/launcher/preview.ts",
     "preprod-remote": "node --max-old-space-size=8192 --experimental-specifier-resolution=node --loader ts-node/esm src/launcher/preprod.ts",
+    "deploy-direct": "node --max-old-space-size=8192 --experimental-specifier-resolution=node --loader ts-node/esm src/launcher/deploy-direct.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {

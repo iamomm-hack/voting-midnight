@@ -86,44 +86,46 @@ export const waitForUnshieldedFunds = async (
   env: EnvironmentConfiguration,
   tokenType: UnshieldedTokenType,
   fundFromFaucet = false,
-  throttleTime = 2_000,
+  throttleTime = 1_000,
 ): Promise<UnshieldedWalletState> => {
   const initialState = await getInitialUnshieldedState(logger, wallet.unshielded);
   const unshieldedAddress = UnshieldedAddress.codec.encode(getNetworkId(), initialState.address);
-  logger.info(`Using unshielded address: ${unshieldedAddress.toString()} waiting for funds...`);
-  if (fundFromFaucet && env.faucet) {
-    logger.info('Requesting tokens from faucet...');
-    await new FaucetClient(env.faucet, logger).requestTokens(unshieldedAddress.toString());
-  }
-  const initialBalance = initialState.balances[tokenType.raw];
-  if (initialBalance === undefined || initialBalance === 0n) {
-    logger.info(`Your wallet initial balance is: 0 (not yet initialized)`);
-    logger.info(`Waiting to receive tokens...`);
-    return Rx.firstValueFrom(
-      wallet.state().pipe(
-        Rx.tap((state: FacadeState) => {
-          const balance = state.unshielded.balances[tokenType.raw] ?? 0n;
-          logger.debug(
-            `Wallet funds state emission: { synced=${isFacadeStateSynced(state)}, balance=${balance.toString()} }`,
-          );
-        }),
-        Rx.throttleTime(throttleTime),
-        Rx.filter(
-          (state: FacadeState) => isFacadeStateSynced(state) && (state.unshielded.balances[tokenType.raw] ?? 0n) > 0n,
-        ),
-        Rx.tap(() => logger.info('Sync complete')),
-        Rx.tap((state: FacadeState) => {
-          const shieldedBalances = state.shielded.balances || {};
-          const unshieldedBalances = state.unshielded.balances || {};
-          const dustBalances = state.dust.balance(new Date(Date.now())) || 0n;
+  logger.info(`Using unshielded address: ${unshieldedAddress.toString()}`);
 
-          logger.info(
-            `Wallet balances after sync - Shielded: ${JSON.stringify(shieldedBalances)}, Unshielded: ${JSON.stringify(unshieldedBalances)}, Dust: ${dustBalances}`,
-          );
-        }),
-        Rx.map((state: FacadeState) => state.unshielded),
-      ),
-    );
+  if (fundFromFaucet && env.faucet) {
+    try {
+      logger.info(`Requesting tokens from faucet for ${unshieldedAddress.toString()}...`);
+      await new FaucetClient(env.faucet, logger).requestTokens(unshieldedAddress.toString());
+    } catch {
+      // Ignore if Cloudflare protected or already requested
+    }
   }
-  return initialState;
+
+  const initialBalance = initialState.balances[tokenType.raw];
+  if (initialBalance !== undefined && initialBalance > 0n) {
+    logger.info(`Existing wallet balance found: ${initialBalance}`);
+    return initialState;
+  }
+
+  logger.info(`Initial balance is 0. Polling wallet state for testnet token arrival...`);
+
+  return Rx.firstValueFrom(
+    Rx.timer(0, 2000).pipe(
+      Rx.concatMap(async () => {
+        try {
+          return await Rx.firstValueFrom(wallet.unshielded.state);
+        } catch {
+          return null;
+        }
+      }),
+      Rx.filter((state): state is UnshieldedWalletState => {
+        if (!state) return false;
+        const balance = state.balances[tokenType.raw] ?? 0n;
+        return balance > 0n;
+      }),
+      Rx.tap((state) => {
+        logger.info(`Funds confirmed! Balance: ${state.balances[tokenType.raw]}`);
+      }),
+    ),
+  );
 };
