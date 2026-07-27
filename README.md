@@ -1,6 +1,6 @@
 # Midnight Privacy Voting DApp
 
-A privacy-preserving decentralized voting application built on the Midnight Network using Zero-Knowledge (ZK) smart contracts for the **Rise In Level 1 Midnight Builder Challenge**.
+A privacy-preserving decentralized voting application built on the Midnight Network using Zero-Knowledge (ZK) smart contracts.
 
 ## Contract Address
 
