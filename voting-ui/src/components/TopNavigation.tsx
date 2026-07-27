@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Typography, Tooltip, IconButton } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import { tokens } from '../../config/tokens';
+import { tokens } from '../config/tokens';
 
 const NavLink: React.FC<{ label: string; active?: boolean }> = ({ label, active }) => (
   <Typography

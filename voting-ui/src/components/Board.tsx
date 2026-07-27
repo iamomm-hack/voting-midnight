@@ -1,35 +1,19 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { type ContractAddress } from '@midnight-ntwrk/midnight-js-protocol/compact-runtime';
-import {
-  Backdrop,
-  CircularProgress,
-  Card,
-  CardActions,
-  CardContent,
-  CardHeader,
-  IconButton,
-  Tooltip,
-  Typography,
-  Button,
-  Box,
-  LinearProgress,
-  Chip,
-  Paper,
-  Alert,
-} from '@mui/material';
-import ThumbUpIcon from '@mui/icons-material/ThumbUp';
-import ThumbDownIcon from '@mui/icons-material/ThumbDown';
-import StopCircleIcon from '@mui/icons-material/StopCircle';
-import CopyIcon from '@mui/icons-material/ContentCopy';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import LockIcon from '@mui/icons-material/Lock';
-import HowToVoteIcon from '@mui/icons-material/HowToVote';
+import { Box, Typography, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { type VotingDerivedState, type DeployedVotingAPI } from '../../../api/src/index';
 import { useDeployedBoardContext } from '../hooks';
 import { type BoardDeployment } from '../contexts';
 import { type Observable } from 'rxjs';
 import { VotingState } from '../../../contract/src/index';
-import { EmptyCardContent } from './Board.EmptyCardContent';
+import { tokens } from '../config/tokens';
+
+import { ProposalHeader } from './ProposalHeader';
+import { ProposalOverview } from './ProposalOverview';
+import { ResultsVisualization } from './ResultsVisualization';
+import { VotingPanel } from './VotingPanel';
+import { PrivacyGuarantee } from './PrivacyGuarantee';
+import { OnChainActivity } from './OnChainActivity';
 
 export interface BoardProps {
   boardDeployment$?: Observable<BoardDeployment>;
@@ -41,34 +25,27 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$, isDemo
   const [boardDeployment, setBoardDeployment] = useState<BoardDeployment>();
   const [deployedAPI, setDeployedAPI] = useState<DeployedVotingAPI>();
   const [errorMessage, setErrorMessage] = useState<string>();
-  const [copied, setCopied] = useState(false);
   const [isWorking, setIsWorking] = useState(false);
-  const [zkLog, setZkLog] = useState<string>('');
 
-  // Local state for interactive demo mode
-  const [demoState, setDemoState] = useState<{
-    title: string;
-    yesVotes: number;
-    noVotes: number;
-    isOpen: boolean;
-    hasVoted: boolean;
-    myVote: 'YES' | 'NO' | null;
-  }>({
-    title: 'CIP-004: Implement Privacy-Preserving Quadratic Voting on Midnight',
+  // Demo state
+  const [demoState, setDemoState] = useState({
+    title: 'CIP-004 — Privacy-Preserving Quadratic Voting',
     yesVotes: 102,
     noVotes: 40,
     isOpen: true,
     hasVoted: false,
-    myVote: null,
   });
 
   const [votingState, setVotingState] = useState<VotingDerivedState | null>(null);
+  const [joinDialogOpen, setJoinDialogOpen] = useState(false);
+  const [addressInput, setAddressInput] = useState('');
+  const [activeTab, setActiveTab] = useState(0);
 
   const onCreateBoard = useCallback(() => {
     try {
       boardApiProvider.resolve();
     } catch {
-      setErrorMessage('Lace Wallet extension not found. You can interact in ZK Demo Mode below!');
+      setErrorMessage('Midnight Lace wallet not found. Displaying interactive preview.');
     }
   }, [boardApiProvider]);
 
@@ -77,7 +54,7 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$, isDemo
       try {
         boardApiProvider.resolve(contractAddress);
       } catch {
-        setErrorMessage('Lace Wallet extension not found. You can interact in ZK Demo Mode below!');
+        setErrorMessage('Midnight Lace wallet not found. Displaying interactive preview.');
       }
     },
     [boardApiProvider],
@@ -85,15 +62,6 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$, isDemo
 
   const castVote = async (choice: boolean) => {
     setIsWorking(true);
-    setZkLog('Generating ZK-SNARK Proof for Voter Secret...');
-    await new Promise((r) => setTimeout(r, 1200));
-
-    setZkLog('Disclosing witness & verifying nullifier...');
-    await new Promise((r) => setTimeout(r, 1000));
-
-    setZkLog('Submitting transaction to Preprod Ledger...');
-    await new Promise((r) => setTimeout(r, 800));
-
     if (deployedAPI) {
       try {
         await deployedAPI.castVote(choice);
@@ -101,25 +69,20 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$, isDemo
         setErrorMessage(err.message || String(err));
       }
     } else {
-      // Demo state update
+      // Demo
+      await new Promise((r) => setTimeout(r, 3000));
       setDemoState((prev) => ({
         ...prev,
         yesVotes: choice ? prev.yesVotes + 1 : prev.yesVotes,
         noVotes: !choice ? prev.noVotes + 1 : prev.noVotes,
         hasVoted: true,
-        myVote: choice ? 'YES' : 'NO',
       }));
     }
-
     setIsWorking(false);
-    setZkLog('');
   };
 
   const endVoting = async () => {
     setIsWorking(true);
-    setZkLog('Finalizing contract state on Midnight Ledger...');
-    await new Promise((r) => setTimeout(r, 1500));
-
     if (deployedAPI) {
       try {
         await deployedAPI.endVoting();
@@ -127,283 +90,275 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$, isDemo
         setErrorMessage(err.message || String(err));
       }
     } else {
+      await new Promise((r) => setTimeout(r, 1500));
       setDemoState((prev) => ({ ...prev, isOpen: false }));
     }
-
     setIsWorking(false);
-    setZkLog('');
   };
 
+  // Subscriptions
   useEffect(() => {
     if (!boardDeployment$) return;
-    const subscription = boardDeployment$.subscribe(setBoardDeployment);
-    return () => { subscription.unsubscribe(); };
+    const sub = boardDeployment$.subscribe(setBoardDeployment);
+    return () => sub.unsubscribe();
   }, [boardDeployment$]);
 
   useEffect(() => {
     if (!boardDeployment) return;
-    if (boardDeployment.status === 'in-progress') {
-      setIsWorking(true);
-      return;
-    }
-
+    if (boardDeployment.status === 'in-progress') { setIsWorking(true); return; }
     setIsWorking(false);
-
     if (boardDeployment.status === 'failed') {
-      setErrorMessage(
-        boardDeployment.error.message.length ? boardDeployment.error.message : 'Encountered an error.',
-      );
+      setErrorMessage(boardDeployment.error.message || 'Encountered an error.');
       return;
     }
-
     setDeployedAPI(boardDeployment.api);
-    const subscription = boardDeployment.api.state$.subscribe(setVotingState);
-    return () => { subscription.unsubscribe(); };
+    const sub = boardDeployment.api.state$.subscribe(setVotingState);
+    return () => sub.unsubscribe();
   }, [boardDeployment]);
 
-  // Derived state (demo or deployed API)
-  const activeTitle = votingState ? votingState.proposalTitle : demoState.title;
-  const activeYes = votingState ? Number(votingState.yesVotes) : demoState.yesVotes;
-  const activeNo = votingState ? Number(votingState.noVotes) : demoState.noVotes;
-  const activeIsOpen = votingState ? votingState.state === VotingState.VOTING_OPEN : demoState.isOpen;
-  const totalVotes = activeYes + activeNo;
-  const yesPercent = totalVotes > 0 ? (activeYes / totalVotes) * 100 : 50;
+  // Derived state
+  const title = votingState ? votingState.proposalTitle : demoState.title;
+  const yesVotes = votingState ? Number(votingState.yesVotes) : demoState.yesVotes;
+  const noVotes = votingState ? Number(votingState.noVotes) : demoState.noVotes;
+  const isOpen = votingState ? votingState.state === VotingState.VOTING_OPEN : demoState.isOpen;
+  const hasVoted = demoState.hasVoted;
+  const totalVotes = yesVotes + noVotes;
+  const contractAddr = deployedAPI?.deployedContractAddress || '0x02004f8a2e1d7092c4b693e507119280ab4cd09d762d312e75e181d11e891ab0';
 
-  const handleCopyAddress = () => {
-    const addr = deployedAPI?.deployedContractAddress || '0x4f8a2e1d7092c4b693e5';
-    navigator.clipboard.writeText(addr);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  // Empty state — no deployment
+  if (!boardDeployment$ && !isDemo) {
+    return (
+      <Box sx={{ textAlign: 'center', py: 8 }}>
+        <Typography sx={{ fontSize: '0.875rem', color: tokens.color.text.tertiary, mb: 3 }}>
+          Deploy a new contract or join an existing one to begin.
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'center' }}>
+          <Button
+            variant="contained"
+            onClick={onCreateBoard}
+            sx={{
+              background: `linear-gradient(135deg, ${tokens.color.accent.violet}, #6d28d9)`,
+              boxShadow: tokens.shadow.glow.violet,
+              px: 3,
+              py: 1,
+            }}
+          >
+            Deploy contract
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => setJoinDialogOpen(true)}
+            sx={{
+              borderColor: tokens.color.border.default,
+              color: tokens.color.text.secondary,
+              '&:hover': { borderColor: tokens.color.accent.violet, color: tokens.color.text.primary },
+            }}
+          >
+            Join existing
+          </Button>
+        </Box>
+
+        <Dialog
+          open={joinDialogOpen}
+          onClose={() => setJoinDialogOpen(false)}
+          slotProps={{
+            paper: {
+              sx: {
+                background: tokens.color.bg.elevated,
+                border: `1px solid ${tokens.color.border.subtle}`,
+                borderRadius: tokens.radius.xl,
+                p: 1,
+                minWidth: 400,
+              },
+            },
+          }}
+        >
+          <DialogTitle sx={{ fontWeight: 600, fontSize: '1rem' }}>Enter contract address</DialogTitle>
+          <DialogContent>
+            <TextField
+              autoFocus
+              fullWidth
+              placeholder="0x…"
+              value={addressInput}
+              onChange={(e) => setAddressInput(e.target.value)}
+              sx={{
+                mt: 1,
+                '& .MuiOutlinedInput-root': {
+                  fontFamily: tokens.font.mono,
+                  fontSize: '0.8125rem',
+                  color: tokens.color.text.primary,
+                  background: tokens.color.bg.surface,
+                  borderRadius: tokens.radius.md,
+                  '& fieldset': { borderColor: tokens.color.border.subtle },
+                  '&:hover fieldset': { borderColor: tokens.color.border.active },
+                },
+              }}
+            />
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={() => setJoinDialogOpen(false)} sx={{ color: tokens.color.text.tertiary }}>Cancel</Button>
+            <Button
+              variant="contained"
+              disabled={!addressInput.trim()}
+              onClick={() => { setJoinDialogOpen(false); onJoinBoard(addressInput.trim()); }}
+              sx={{ background: tokens.color.accent.violet }}
+            >
+              Connect
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    );
+  }
+
+  // Tabs
+  const tabs = ['Overview', 'Discussion', 'Specification', 'Activity'];
 
   return (
-    <Card
-      sx={{
-        width: '100%',
-        maxWidth: 680,
-        mx: 'auto',
-        position: 'relative',
-        overflow: 'hidden',
-        background: 'rgba(18, 22, 34, 0.85)',
-        border: '1px solid rgba(124, 77, 255, 0.3)',
-        borderRadius: 4,
-        boxShadow: '0 12px 40px 0 rgba(0, 0, 0, 0.5)',
-      }}
-    >
-      <Backdrop
-        sx={{
-          position: 'absolute',
-          color: '#fff',
-          zIndex: (theme) => theme.zIndex.drawer + 1,
-          flexDirection: 'column',
-          gap: 2,
-          backgroundColor: 'rgba(8, 9, 14, 0.9)',
-          backdropFilter: 'blur(8px)',
-        }}
-        open={isWorking}
-      >
-        <CircularProgress size={48} sx={{ color: '#7c4dff' }} />
-        <Typography variant="body1" sx={{ color: '#b47cff', fontWeight: 600 }}>
-          {zkLog || 'Executing Zero-Knowledge Circuit...'}
-        </Typography>
-      </Backdrop>
-
-      {!boardDeployment$ && !isDemo ? (
-        <EmptyCardContent onCreateBoardCallback={onCreateBoard} onJoinBoardCallback={onJoinBoard} />
-      ) : (
-        <React.Fragment>
-          {errorMessage && (
-            <Alert severity="error" onClose={() => setErrorMessage(undefined)} sx={{ borderRadius: 0 }}>
-              {errorMessage}
-            </Alert>
-          )}
-
-          {/* Header */}
-          <CardHeader
-            avatar={
-              <Box
-                sx={{
-                  background: 'linear-gradient(135deg, #7c4dff, #00e676)',
-                  borderRadius: 2,
-                  p: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
-                <HowToVoteIcon sx={{ color: '#fff' }} />
-              </Box>
-            }
-            title={
-              <Typography variant="h6" sx={{ fontWeight: 700, color: '#f8fafc' }}>
-                Governance Proposal #01
-              </Typography>
-            }
-            subheader={
-              <Typography variant="caption" sx={{ color: '#94a3b8' }}>
-                Contract Address: {deployedAPI?.deployedContractAddress?.slice(0, 10) || '0x4f8a...c4b6'}...
-              </Typography>
-            }
-            action={
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Chip
-                  label={activeIsOpen ? 'VOTING ACTIVE' : 'CLOSED'}
-                  color={activeIsOpen ? 'success' : 'default'}
-                  size="small"
-                  sx={{ fontWeight: 700, px: 1 }}
-                />
-                <Tooltip title={copied ? 'Copied!' : 'Copy Contract Address'}>
-                  <IconButton onClick={handleCopyAddress} size="small" sx={{ color: '#94a3b8' }}>
-                    {copied ? <CheckCircleIcon sx={{ color: '#00e676' }} /> : <CopyIcon fontSize="small" />}
-                  </IconButton>
-                </Tooltip>
-              </Box>
-            }
-            sx={{ pb: 1, borderBottom: '1px solid rgba(255,255,255,0.06)' }}
-          />
-
-          <CardContent sx={{ p: 3 }}>
-            {/* Proposal Details */}
-            <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, color: '#e2e8f0', lineHeight: 1.4 }}>
-              {activeTitle}
-            </Typography>
-
-            <Typography variant="body2" sx={{ color: '#94a3b8', mb: 3 }}>
-              Zero-knowledge proof verification ensures voter identities stay hidden while vote choices are cryptographically tallied on-chain.
-            </Typography>
-
-            {/* Voting Stats Progress Bar */}
-            <Paper
-              elevation={0}
-              sx={{
-                p: 2.5,
-                borderRadius: 3,
-                background: 'rgba(255, 255, 255, 0.03)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                mb: 3,
-              }}
-            >
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <ThumbUpIcon sx={{ color: '#10b981', fontSize: 20 }} />
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#10b981' }}>
-                    YES: {activeYes} ({yesPercent.toFixed(0)}%)
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#ef4444' }}>
-                    NO: {activeNo} ({(100 - yesPercent).toFixed(0)}%)
-                  </Typography>
-                  <ThumbDownIcon sx={{ color: '#ef4444', fontSize: 20 }} />
-                </Box>
-              </Box>
-
-              <LinearProgress
-                variant="determinate"
-                value={yesPercent}
-                sx={{
-                  height: 12,
-                  borderRadius: 6,
-                  backgroundColor: 'rgba(239, 68, 68, 0.3)',
-                  '& .MuiLinearProgress-bar': {
-                    backgroundColor: '#10b981',
-                    borderRadius: 6,
-                  },
-                }}
-              />
-
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1.5 }}>
-                <Typography variant="caption" sx={{ color: '#94a3b8' }}>
-                  Total Votes: <strong>{totalVotes}</strong>
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <LockIcon sx={{ fontSize: 12, color: '#b47cff' }} /> ZK Privacy Shielded
-                </Typography>
-              </Box>
-            </Paper>
-
-            {/* My Vote Alert */}
-            {demoState.hasVoted && (
-              <Alert
-                icon={<CheckCircleIcon fontSize="inherit" />}
-                severity={demoState.myVote === 'YES' ? 'success' : 'error'}
-                sx={{ mb: 2, borderRadius: 2 }}
-              >
-                You privately voted <strong>{demoState.myVote}</strong>! ZK Witness verified without revealing your secret key.
-              </Alert>
-            )}
-
-            {/* ZK Proof Info Badge */}
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1.5,
-                p: 1.5,
-                borderRadius: 2,
-                background: 'rgba(124, 77, 255, 0.08)',
-                border: '1px solid rgba(124, 77, 255, 0.2)',
-              }}
-            >
-              <LockIcon sx={{ color: '#7c4dff', fontSize: 20 }} />
-              <Typography variant="caption" sx={{ color: '#b47cff' }}>
-                Witness disclosure rule: <code>disclose(voteChoice)</code> executes within zk-SNARK circuit.
-              </Typography>
-            </Box>
-          </CardContent>
-
-          {/* Action Buttons */}
-          <CardActions sx={{ px: 3, pb: 3, gap: 2, justifyContent: 'space-between' }}>
-            <Box sx={{ display: 'flex', gap: 1.5 }}>
-              <Button
-                variant="contained"
-                startIcon={<ThumbUpIcon />}
-                disabled={!activeIsOpen || isWorking}
-                onClick={() => castVote(true)}
-                sx={{
-                  background: 'linear-gradient(135deg, #10b981, #059669)',
-                  boxShadow: '0 4px 14px 0 rgba(16, 185, 129, 0.3)',
-                  px: 3,
-                  py: 1,
-                  '&:hover': { background: '#059669' },
-                }}
-              >
-                Vote YES
-              </Button>
-
-              <Button
-                variant="contained"
-                startIcon={<ThumbDownIcon />}
-                disabled={!activeIsOpen || isWorking}
-                onClick={() => castVote(false)}
-                sx={{
-                  background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-                  boxShadow: '0 4px 14px 0 rgba(239, 68, 68, 0.3)',
-                  px: 3,
-                  py: 1,
-                  '&:hover': { background: '#dc2626' },
-                }}
-              >
-                Vote NO
-              </Button>
-            </Box>
-
-            <Tooltip title="End voting period & finalize results">
-              <span>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  startIcon={<StopCircleIcon />}
-                  disabled={!activeIsOpen || isWorking}
-                  onClick={endVoting}
-                  sx={{ borderColor: 'rgba(239,68,68,0.4)', py: 1 }}
-                >
-                  Close Vote
-                </Button>
-              </span>
-            </Tooltip>
-          </CardActions>
-        </React.Fragment>
+    <Box>
+      {/* Error banner */}
+      {errorMessage && (
+        <Box
+          sx={{
+            mb: 2,
+            p: 1.5,
+            borderRadius: tokens.radius.md,
+            background: tokens.color.accent.redMuted,
+            border: `1px solid ${tokens.color.border.error}`,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Typography sx={{ fontSize: '0.8125rem', color: tokens.color.accent.red }}>{errorMessage}</Typography>
+          <Button size="small" onClick={() => setErrorMessage(undefined)} sx={{ color: tokens.color.accent.red, minWidth: 'auto' }}>
+            ✕
+          </Button>
+        </Box>
       )}
-    </Card>
+
+      <ProposalHeader title={title} isOpen={isOpen} contractAddress={contractAddr} />
+
+      {/* Tabs */}
+      <Box
+        role="tablist"
+        sx={{
+          display: 'flex',
+          gap: 0,
+          borderBottom: `1px solid ${tokens.color.border.subtle}`,
+          mb: 3,
+          overflow: 'auto',
+        }}
+      >
+        {tabs.map((tab, i) => (
+          <Box
+            key={tab}
+            role="tab"
+            aria-selected={activeTab === i}
+            tabIndex={0}
+            onClick={() => setActiveTab(i)}
+            onKeyDown={(e) => e.key === 'Enter' && setActiveTab(i)}
+            sx={{
+              px: 2,
+              py: 1.25,
+              fontSize: '0.8125rem',
+              fontWeight: 500,
+              color: activeTab === i ? tokens.color.text.primary : tokens.color.text.tertiary,
+              borderBottom: activeTab === i ? `2px solid ${tokens.color.accent.violet}` : '2px solid transparent',
+              cursor: 'pointer',
+              transition: tokens.transition.fast,
+              flexShrink: 0,
+              '&:hover': { color: tokens.color.text.secondary },
+              '&:focus-visible': { outline: `2px solid ${tokens.color.accent.violet}`, outlineOffset: '-2px' },
+            }}
+          >
+            {tab}
+          </Box>
+        ))}
+      </Box>
+
+      {/* Content grid */}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', lg: '1fr 340px' },
+          gap: 3,
+          alignItems: 'start',
+        }}
+      >
+        {/* Main content */}
+        <Box>
+          {activeTab === 0 && <ProposalOverview />}
+          {activeTab === 1 && (
+            <Typography sx={{ fontSize: '0.875rem', color: tokens.color.text.tertiary, py: 4 }}>
+              Discussion is not yet available for this proposal.
+            </Typography>
+          )}
+          {activeTab === 2 && (
+            <Box sx={{ py: 2 }}>
+              <Box
+                component="pre"
+                sx={{
+                  fontFamily: tokens.font.mono,
+                  fontSize: '0.75rem',
+                  color: tokens.color.text.secondary,
+                  background: tokens.color.bg.surface,
+                  border: `1px solid ${tokens.color.border.subtle}`,
+                  borderRadius: tokens.radius.md,
+                  p: 2,
+                  overflow: 'auto',
+                  lineHeight: 1.7,
+                  whiteSpace: 'pre-wrap',
+                }}
+              >
+{`circuit voting {
+  state VotingState { VOTING_OPEN, VOTING_ENDED }
+  
+  ledger {
+    proposalTitle: Bytes<32>;
+    yesVotes: Counter;
+    noVotes: Counter;
+    state: VotingState;
+    admin: Bytes<32>;
+  }
+
+  castVote(voteChoice: Boolean) {
+    assert(state == VOTING_OPEN);
+    disclose(voteChoice);
+    if (voteChoice) yesVotes += 1;
+    else noVotes += 1;
+  }
+}`}
+              </Box>
+            </Box>
+          )}
+          {activeTab === 3 && <OnChainActivity totalVotes={totalVotes} isOpen={isOpen} />}
+
+          {/* Activity always visible below overview */}
+          {activeTab === 0 && <OnChainActivity totalVotes={totalVotes} isOpen={isOpen} />}
+        </Box>
+
+        {/* Right panel */}
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            position: { lg: 'sticky' },
+            top: { lg: 68 },
+          }}
+        >
+          <ResultsVisualization yesVotes={yesVotes} noVotes={noVotes} isOpen={isOpen} />
+          <VotingPanel
+            isOpen={isOpen}
+            hasVoted={hasVoted}
+            isWorking={isWorking}
+            onCastVote={castVote}
+            onEndVoting={endVoting}
+          />
+          <PrivacyGuarantee />
+        </Box>
+      </Box>
+    </Box>
   );
 };
