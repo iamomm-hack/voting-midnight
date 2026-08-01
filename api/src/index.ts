@@ -56,7 +56,8 @@ export class VotingAPI implements DeployedVotingAPI {
         ),
         from(providers.privateStateProvider.get(votingPrivateStateKey) as Promise<VotingPrivateState>),
       ],
-      (ledgerState, _privateState) => {
+      (ledgerState, privateState) => {
+        void privateState;
         return {
           state: ledgerState.state,
           proposalTitle: "Community Governance Proposal #1",
