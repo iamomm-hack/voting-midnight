@@ -18,7 +18,8 @@
     "compact": "compact compile src/voting.compact ./src/managed/voting",
     "lint": "eslint src",
     "prepack": "npm build",
-    "test": "vitest",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
