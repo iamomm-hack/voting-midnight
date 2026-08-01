@@ -37,8 +37,27 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Compile contract, run tests and build application
-        run: npm run ci
+      - name: Compile Compact contract
+        run: npm run compact --workspace=@midnight-ntwrk/voting-contract
+
+      - name: Test Compact contract
+        run: |
+          npm run typecheck --workspace=@midnight-ntwrk/voting-contract
+          npm run lint --workspace=@midnight-ntwrk/voting-contract
+          npm run build --workspace=@midnight-ntwrk/voting-contract
+          npm test
+
+      - name: Check API package
+        run: npm run ci --workspace=@midnight-ntwrk/voting-api
+
+      - name: Check CLI package
+        run: npm run ci --workspace=@midnight-ntwrk/voting-cli
+
+      - name: Check UI package
+        run: npm run ci --workspace=@midnight-ntwrk/voting-ui
+
+      - name: Build production application
+        run: npm run build --workspace=@midnight-ntwrk/voting-ui
 
       - name: Upload production site
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
