@@ -16,7 +16,7 @@ describe("Midnight private voting contract", () => {
     expect(ledger.noVotes).toBe(0n);
     expect(ledger.totalVoters).toBe(0n);
     expect(ledger.sequence).toBe(1n);
-    expect(ledger.usedNullifiers.size).toBe(0n);
+    expect(ledger.usedNullifiers.size()).toBe(0n);
   });
 
   it("records YES and NO ballots in publicly verifiable tallies", () => {
@@ -28,7 +28,7 @@ describe("Midnight private voting contract", () => {
     expect(ledger.yesVotes).toBe(1n);
     expect(ledger.noVotes).toBe(1n);
     expect(ledger.totalVoters).toBe(2n);
-    expect(ledger.usedNullifiers.size).toBe(2n);
+    expect(ledger.usedNullifiers.size()).toBe(2n);
   });
 
   it("keeps the local secret unchanged when a ballot is cast", () => {
