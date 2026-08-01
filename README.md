@@ -5,7 +5,7 @@
 
 A production-oriented voting dApp for the Midnight Network. It uses a Compact zero-knowledge contract, poll-scoped nullifiers, a React wallet UI, contract tests, and automated build/deployment.
 
-- **Chosen Level 3 idea:** Private Voting — anonymous participation with publicly verifiable tallies
+- **Idea:** Private Voting — anonymous participation with publicly verifiable tallies
 - **Live demo:** [GitHub Pages](https://iamomm-hack.github.io/voting-midnight/)
 - **Network:** Midnight Preprod
 - **Deployed contract:** `0x02004f8a2e1d7092c4b693e507119280ab4cd09d762d312e75e181d11e891ab0`
