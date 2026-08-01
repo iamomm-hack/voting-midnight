@@ -28,7 +28,8 @@ export const DocsView: React.FC = () => {
           Midnight ZK Governance Specs
         </Typography>
         <Typography sx={{ fontSize: '0.875rem', color: tokens.color.text.tertiary, maxWidth: 640, mx: 'auto' }}>
-          Technical specification and zero-knowledge privacy architecture governing anonymous on-chain voting on the Midnight Network.
+          Technical specification and zero-knowledge privacy architecture governing anonymous on-chain voting on the
+          Midnight Network.
         </Typography>
       </Box>
 
@@ -65,12 +66,22 @@ export const DocsView: React.FC = () => {
               </Typography>
             </Box>
             <Typography sx={{ fontSize: '0.8125rem', color: tokens.color.text.secondary, lineHeight: 1.6, mb: 2 }}>
-              The Midnight Privacy Voting DApp leverages Compact zero-knowledge circuits. Voter secret keys and raw identity inputs remain strictly inside local browser witness memory.
+              The Midnight Privacy Voting DApp leverages Compact zero-knowledge circuits. Voter secret keys and raw
+              identity inputs remain strictly inside local browser witness memory.
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <DocBullet label="Public State" value="Proposal Title, Total YES/NO counts, Voting State, Sequence counter" />
-              <DocBullet label="Private State" value="Voter secret key (localSecretKey), unshielded wallet credentials" />
-              <DocBullet label="Nullifier Protection" value="Disclosed voter public key derived via persistentHash to prevent double-voting" />
+              <DocBullet
+                label="Public State"
+                value="Proposal Title, Total YES/NO counts, Voting State, Sequence counter"
+              />
+              <DocBullet
+                label="Private State"
+                value="Voter secret key (localSecretKey), unshielded wallet credentials"
+              />
+              <DocBullet
+                label="Nullifier Protection"
+                value="Disclosed voter public key derived via persistentHash to prevent double-voting"
+              />
             </Box>
           </Paper>
         </Grid>
@@ -124,7 +135,8 @@ export const DocsView: React.FC = () => {
               {'}'}
             </Box>
             <Typography sx={{ fontSize: '0.8125rem', color: tokens.color.text.secondary, lineHeight: 1.6 }}>
-              Compiled via Compact v0.31.0 compiler into local ZKIR assets (`voting.zkir`) and proving keys used during browser execution.
+              Compiled via Compact v0.31.0 compiler into local ZKIR assets (`voting.zkir`) and proving keys used during
+              browser execution.
             </Typography>
           </Paper>
         </Grid>
@@ -198,12 +210,21 @@ export const DocsView: React.FC = () => {
               </Typography>
             </Box>
             <Typography sx={{ fontSize: '0.8125rem', color: tokens.color.text.secondary, lineHeight: 1.6, mb: 2 }}>
-              Connect using native Lace Wallet or 1AM Wallet extensions via <code style={{ color: tokens.color.accent.violet }}>window.midnight</code> API.
+              Connect using native Lace Wallet or 1AM Wallet extensions via{' '}
+              <code style={{ color: tokens.color.accent.violet }}>window.midnight</code> API.
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <DocStep number="1" title="Connect Wallet" desc="Select Lace Wallet or 1AM Wallet from the top right nav." />
+              <DocStep
+                number="1"
+                title="Connect Wallet"
+                desc="Select Lace Wallet or 1AM Wallet from the top right nav."
+              />
               <DocStep number="2" title="Cast Vote" desc="Select FOR or AGAINST and click Confirm Vote." />
-              <DocStep number="3" title="Approve Transaction" desc="Confirm in the approval modal to sign local ZK proof." />
+              <DocStep
+                number="3"
+                title="Approve Transaction"
+                desc="Confirm in the approval modal to sign local ZK proof."
+              />
             </Box>
           </Paper>
         </Grid>

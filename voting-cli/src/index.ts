@@ -1,6 +1,6 @@
-import { createInterface, type Interface } from 'node:readline/promises';
-import { stdin as input, stdout as output } from 'node:process';
-import { WebSocket } from 'ws';
+import { createInterface, type Interface } from "node:readline/promises";
+import { stdin as input, stdout as output } from "node:process";
+import { WebSocket } from "ws";
 import {
   VotingAPI,
   type VotingDerivedState,
@@ -8,24 +8,31 @@ import {
   type VotingProviders,
   type DeployedVotingContract,
   type PrivateStateId,
-} from '../../api/src/index';
-import { type WalletFacade } from '@midnight-ntwrk/wallet-sdk-facade';
-import { ledger, type Ledger, VotingState } from '../../contract/src/managed/voting/contract/index.js';
-import { NodeZkConfigProvider } from '@midnight-ntwrk/midnight-js-node-zk-config-provider';
-import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
-import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
-import { type Logger } from 'pino';
-import { type Config, StandaloneConfig } from './config.js';
-import { levelPrivateStateProvider } from '@midnight-ntwrk/midnight-js-level-private-state-provider';
-import { type ContractAddress } from '@midnight-ntwrk/midnight-js-protocol/compact-runtime';
-import { assertIsContractAddress, toHex } from '@midnight-ntwrk/midnight-js-utils';
-import { TestEnvironment } from '@midnight-ntwrk/testkit-js';
-import { MidnightWalletProvider } from './midnight-wallet-provider';
-import { randomBytes } from '../../api/src/utils';
-import { unshieldedToken } from '@midnight-ntwrk/midnight-js-protocol/ledger';
-import { syncWallet, waitForUnshieldedFunds } from './wallet-utils';
-import { generateDust } from './generate-dust';
-import { VotingPrivateState } from '../../contract/src/witnesses.js';
+} from "../../api/src/index";
+import { type WalletFacade } from "@midnight-ntwrk/wallet-sdk-facade";
+import {
+  ledger,
+  type Ledger,
+  VotingState,
+} from "../../contract/src/managed/voting/contract/index.js";
+import { NodeZkConfigProvider } from "@midnight-ntwrk/midnight-js-node-zk-config-provider";
+import { indexerPublicDataProvider } from "@midnight-ntwrk/midnight-js-indexer-public-data-provider";
+import { httpClientProofProvider } from "@midnight-ntwrk/midnight-js-http-client-proof-provider";
+import { type Logger } from "pino";
+import { type Config, StandaloneConfig } from "./config.js";
+import { levelPrivateStateProvider } from "@midnight-ntwrk/midnight-js-level-private-state-provider";
+import { type ContractAddress } from "@midnight-ntwrk/midnight-js-protocol/compact-runtime";
+import {
+  assertIsContractAddress,
+  toHex,
+} from "@midnight-ntwrk/midnight-js-utils";
+import { TestEnvironment } from "@midnight-ntwrk/testkit-js";
+import { MidnightWalletProvider } from "./midnight-wallet-provider";
+import { randomBytes } from "../../api/src/utils";
+import { unshieldedToken } from "@midnight-ntwrk/midnight-js-protocol/ledger";
+import { syncWallet, waitForUnshieldedFunds } from "./wallet-utils";
+import { generateDust } from "./generate-dust";
+import { VotingPrivateState } from "../../contract/src/witnesses.js";
 
 // @ts-expect-error: WebSocket polyfill for apollo
 globalThis.WebSocket = WebSocket;
@@ -35,7 +42,8 @@ export const getVotingLedgerState = async (
   contractAddress: ContractAddress,
 ): Promise<Ledger | null> => {
   assertIsContractAddress(contractAddress);
-  const contractState = await providers.publicDataProvider.queryContractState(contractAddress);
+  const contractState =
+    await providers.publicDataProvider.queryContractState(contractAddress);
   return contractState != null ? ledger(contractState.data) : null;
 };
 
@@ -46,22 +54,34 @@ Voting DApp Options:
   3. Exit
 Which would you like to do? `;
 
-const deployOrJoin = async (providers: VotingProviders, rli: Interface, logger: Logger): Promise<VotingAPI | null> => {
+const deployOrJoin = async (
+  providers: VotingProviders,
+  rli: Interface,
+  logger: Logger,
+): Promise<VotingAPI | null> => {
   let api: VotingAPI | null = null;
 
   while (true) {
     const choice = await rli.question(DEPLOY_OR_JOIN_QUESTION);
     switch (choice) {
-      case '1':
+      case "1":
         api = await VotingAPI.deploy(providers, logger);
-        logger.info(`Deployed Voting contract at address: ${api.deployedContractAddress}`);
+        logger.info(
+          `Deployed Voting contract at address: ${api.deployedContractAddress}`,
+        );
         return api;
-      case '2':
-        api = await VotingAPI.join(providers, await rli.question('What is the contract address (in hex)? '), logger);
-        logger.info(`Joined Voting contract at address: ${api.deployedContractAddress}`);
+      case "2":
+        api = await VotingAPI.join(
+          providers,
+          await rli.question("What is the contract address (in hex)? "),
+          logger,
+        );
+        logger.info(
+          `Joined Voting contract at address: ${api.deployedContractAddress}`,
+        );
         return api;
-      case '3':
-        logger.info('Exiting...');
+      case "3":
+        logger.info("Exiting...");
         return null;
       default:
         logger.error(`Invalid choice: ${choice}`);
@@ -74,12 +94,14 @@ const displayLedgerState = async (
   deployedVotingContract: DeployedVotingContract,
   logger: Logger,
 ): Promise<void> => {
-  const contractAddress = deployedVotingContract.deployTxData.public.contractAddress;
+  const contractAddress =
+    deployedVotingContract.deployTxData.public.contractAddress;
   const ledgerState = await getVotingLedgerState(providers, contractAddress);
   if (ledgerState === null) {
     logger.info(`No voting contract found at ${contractAddress}`);
   } else {
-    const status = ledgerState.state === VotingState.VOTING_OPEN ? 'OPEN' : 'ENDED';
+    const status =
+      ledgerState.state === VotingState.VOTING_OPEN ? "OPEN" : "ENDED";
     logger.info(`Proposal: 'Community Governance Proposal #1'`);
     logger.info(`Status: '${status}'`);
     logger.info(`Yes Votes: ${ledgerState.yesVotes}`);
@@ -89,8 +111,13 @@ const displayLedgerState = async (
   }
 };
 
-const displayPrivateState = async (providers: VotingProviders, logger: Logger): Promise<void> => {
-  const privateState = await providers.privateStateProvider.get(votingPrivateStateKey);
+const displayPrivateState = async (
+  providers: VotingProviders,
+  logger: Logger,
+): Promise<void> => {
+  const privateState = await providers.privateStateProvider.get(
+    votingPrivateStateKey,
+  );
   if (privateState === null) {
     logger.info(`No voting private state found`);
   } else {
@@ -108,7 +135,11 @@ Voting Actions:
   6. Exit
 Which would you like to do? `;
 
-const mainLoop = async (providers: VotingProviders, rli: Interface, logger: Logger): Promise<void> => {
+const mainLoop = async (
+  providers: VotingProviders,
+  rli: Interface,
+  logger: Logger,
+): Promise<void> => {
   const votingApi = await deployOrJoin(providers, rli, logger);
   if (votingApi === null) {
     return;
@@ -123,35 +154,43 @@ const mainLoop = async (providers: VotingProviders, rli: Interface, logger: Logg
       const choice = await rli.question(MAIN_LOOP_QUESTION);
       try {
         switch (choice) {
-          case '1': {
+          case "1": {
             await votingApi.castVote(true);
-            logger.info('Successfully cast YES vote anonymously via Zero-Knowledge proof!');
+            logger.info(
+              "Successfully cast YES vote anonymously via Zero-Knowledge proof!",
+            );
             break;
           }
-          case '2': {
+          case "2": {
             await votingApi.castVote(false);
-            logger.info('Successfully cast NO vote anonymously via Zero-Knowledge proof!');
+            logger.info(
+              "Successfully cast NO vote anonymously via Zero-Knowledge proof!",
+            );
             break;
           }
-          case '3':
+          case "3":
             await votingApi.endVoting();
-            logger.info('Voting session ended.');
+            logger.info("Voting session ended.");
             break;
-          case '4':
-            await displayLedgerState(providers, votingApi.deployedContract, logger);
+          case "4":
+            await displayLedgerState(
+              providers,
+              votingApi.deployedContract,
+              logger,
+            );
             break;
-          case '5':
+          case "5":
             await displayPrivateState(providers, logger);
             break;
-          case '6':
-            logger.info('Exiting...');
+          case "6":
+            logger.info("Exiting...");
             return;
           default:
             logger.error(`Invalid choice: ${choice}`);
         }
       } catch (e) {
         logError(logger, e);
-        logger.info('Returning to main menu...');
+        logger.info("Returning to main menu...");
       }
     }
   } finally {
@@ -159,7 +198,8 @@ const mainLoop = async (providers: VotingProviders, rli: Interface, logger: Logg
   }
 };
 
-const GENESIS_MINT_WALLET_SEED = '0000000000000000000000000000000000000000000000000000000000000001';
+const GENESIS_MINT_WALLET_SEED =
+  "0000000000000000000000000000000000000000000000000000000000000001";
 
 const WALLET_LOOP_QUESTION = `
 Wallet Setup:
@@ -168,19 +208,23 @@ Wallet Setup:
   3. Exit
 Which would you like to do? `;
 
-const buildWallet = async (config: Config, rli: Interface, logger: Logger): Promise<string | undefined> => {
+const buildWallet = async (
+  config: Config,
+  rli: Interface,
+  logger: Logger,
+): Promise<string | undefined> => {
   if (config instanceof StandaloneConfig) {
     return GENESIS_MINT_WALLET_SEED;
   }
   while (true) {
     const choice = await rli.question(WALLET_LOOP_QUESTION);
     switch (choice) {
-      case '1':
+      case "1":
         return toHex(randomBytes(32));
-      case '2':
-        return await rli.question('Enter your wallet seed: ');
-      case '3':
-        logger.info('Exiting...');
+      case "2":
+        return await rli.question("Enter your wallet seed: ");
+      case "3":
+        logger.info("Exiting...");
         return undefined;
       default:
         logger.error(`Invalid choice: ${choice}`);
@@ -188,58 +232,91 @@ const buildWallet = async (config: Config, rli: Interface, logger: Logger): Prom
   }
 };
 
-export const run = async (config: Config, testEnv: TestEnvironment, logger: Logger): Promise<void> => {
+export const run = async (
+  config: Config,
+  testEnv: TestEnvironment,
+  logger: Logger,
+): Promise<void> => {
   const rli = createInterface({ input, output, terminal: true });
   const providersToBeStopped: MidnightWalletProvider[] = [];
   try {
     const envConfiguration = await testEnv.start();
-    logger.info(`Environment started with configuration: ${JSON.stringify(envConfiguration)}`);
+    logger.info(
+      `Environment started with configuration: ${JSON.stringify(envConfiguration)}`,
+    );
     const seed = await buildWallet(config, rli, logger);
     if (seed === undefined) {
       return;
     }
-    const walletProvider = await MidnightWalletProvider.build(logger, envConfiguration, seed);
+    const walletProvider = await MidnightWalletProvider.build(
+      logger,
+      envConfiguration,
+      seed,
+    );
     providersToBeStopped.push(walletProvider);
     const walletFacade: WalletFacade = walletProvider.wallet;
 
     await walletProvider.start();
 
-    const unshieldedState = await waitForUnshieldedFunds(logger, walletFacade, envConfiguration, unshieldedToken());
+    const unshieldedState = await waitForUnshieldedFunds(
+      logger,
+      walletFacade,
+      envConfiguration,
+      unshieldedToken(),
+    );
     const nightBalance = unshieldedState.balances[unshieldedToken().raw];
     if (nightBalance === undefined) {
-      logger.info('No funds received, exiting...');
+      logger.info("No funds received, exiting...");
       return;
     }
     logger.info(`Your NIGHT wallet balance is: ${nightBalance}`);
 
     if (config.generateDust) {
-      const dustGeneration = await generateDust(logger, seed, unshieldedState, walletFacade);
+      const dustGeneration = await generateDust(
+        logger,
+        seed,
+        unshieldedState,
+        walletFacade,
+      );
       if (dustGeneration) {
-        logger.info(`Submitted dust generation registration transaction: ${dustGeneration}`);
+        logger.info(
+          `Submitted dust generation registration transaction: ${dustGeneration}`,
+        );
         await syncWallet(logger, walletFacade);
       }
     }
 
-    const zkConfigProvider = new NodeZkConfigProvider<'castVote' | 'endVoting'>(config.zkConfigPath);
+    const zkConfigProvider = new NodeZkConfigProvider<"castVote" | "endVoting">(
+      config.zkConfigPath,
+    );
     const providers: VotingProviders = {
-      privateStateProvider: levelPrivateStateProvider<PrivateStateId, VotingPrivateState>({
+      privateStateProvider: levelPrivateStateProvider<
+        PrivateStateId,
+        VotingPrivateState
+      >({
         privateStateStoreName: config.privateStateStoreName,
         signingKeyStoreName: `${config.privateStateStoreName}-signing-keys`,
         privateStoragePasswordProvider: () => {
-          return 'Voting-Test-2026!';
+          return "Voting-Test-2026!";
         },
         accountId: seed,
       }),
-      publicDataProvider: indexerPublicDataProvider(envConfiguration.indexer, envConfiguration.indexerWS),
+      publicDataProvider: indexerPublicDataProvider(
+        envConfiguration.indexer,
+        envConfiguration.indexerWS,
+      ),
       zkConfigProvider: zkConfigProvider,
-      proofProvider: httpClientProofProvider(envConfiguration.proofServer, zkConfigProvider),
+      proofProvider: httpClientProofProvider(
+        envConfiguration.proofServer,
+        zkConfigProvider,
+      ),
       walletProvider: walletProvider,
       midnightProvider: walletProvider,
     };
     await mainLoop(providers, rli, logger);
   } catch (e) {
     logError(logger, e);
-    logger.info('Exiting...');
+    logger.info("Exiting...");
   } finally {
     try {
       rli.close();
@@ -249,11 +326,11 @@ export const run = async (config: Config, testEnv: TestEnvironment, logger: Logg
     } finally {
       try {
         for (const wallet of providersToBeStopped) {
-          logger.info('Stopping wallet...');
+          logger.info("Stopping wallet...");
           await wallet.stop();
         }
         if (testEnv) {
-          logger.info('Stopping test environment...');
+          logger.info("Stopping test environment...");
           await testEnv.shutdown();
         }
       } catch (e) {

@@ -35,13 +35,7 @@ const PROOF_STAGES = [
   'Verifying on-chain state transition…',
 ];
 
-export const VotingPanel: React.FC<VotingPanelProps> = ({
-  isOpen,
-  hasVoted,
-  isWorking,
-  onCastVote,
-  onEndVoting,
-}) => {
+export const VotingPanel: React.FC<VotingPanelProps> = ({ isOpen, hasVoted, isWorking, onCastVote, onEndVoting }) => {
   const [selection, setSelection] = useState<VoteSelection>(null);
   const [phase, setPhase] = useState<VotePhase>('idle');
   const [proofStage, setProofStage] = useState(0);
@@ -208,17 +202,17 @@ export const VotingPanel: React.FC<VotingPanelProps> = ({
           fontSize: '0.8125rem',
           fontWeight: 600,
           borderRadius: tokens.radius.md,
-          background: phase === 'verified'
-            ? tokens.color.accent.emeraldMuted
-            : `linear-gradient(135deg, ${tokens.color.accent.violet}, #6d28d9)`,
+          background:
+            phase === 'verified'
+              ? tokens.color.accent.emeraldMuted
+              : `linear-gradient(135deg, ${tokens.color.accent.violet}, #6d28d9)`,
           color: phase === 'verified' ? tokens.color.accent.emerald : '#fff',
           border: phase === 'verified' ? `1px solid ${tokens.color.border.success}` : 'none',
           boxShadow: phase === 'verified' ? 'none' : tokens.shadow.glow.violet,
           transition: tokens.transition.normal,
           '&:hover': {
-            background: phase === 'verified'
-              ? tokens.color.accent.emeraldMuted
-              : `linear-gradient(135deg, #7c3aed, #5b21b6)`,
+            background:
+              phase === 'verified' ? tokens.color.accent.emeraldMuted : `linear-gradient(135deg, #7c3aed, #5b21b6)`,
           },
           '&:disabled': {
             background: 'rgba(255,255,255,0.04)',
@@ -280,7 +274,12 @@ export const VotingPanel: React.FC<VotingPanelProps> = ({
               Approve Transaction in Wallet
             </Typography>
           </Box>
-          <IconButton size="small" onClick={handleCloseModal} disabled={isApproving} sx={{ color: tokens.color.text.tertiary }}>
+          <IconButton
+            size="small"
+            onClick={handleCloseModal}
+            disabled={isApproving}
+            sx={{ color: tokens.color.text.tertiary }}
+          >
             <CloseIcon sx={{ fontSize: 16 }} />
           </IconButton>
         </DialogTitle>
@@ -297,7 +296,14 @@ export const VotingPanel: React.FC<VotingPanelProps> = ({
           >
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
               <Typography sx={{ fontSize: '0.75rem', color: tokens.color.text.tertiary }}>Contract Action</Typography>
-              <Typography sx={{ fontSize: '0.75rem', fontFamily: tokens.font.mono, fontWeight: 600, color: tokens.color.text.primary }}>
+              <Typography
+                sx={{
+                  fontSize: '0.75rem',
+                  fontFamily: tokens.font.mono,
+                  fontWeight: 600,
+                  color: tokens.color.text.primary,
+                }}
+              >
                 castVote()
               </Typography>
             </Box>
@@ -318,14 +324,18 @@ export const VotingPanel: React.FC<VotingPanelProps> = ({
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
               <Typography sx={{ fontSize: '0.75rem', color: tokens.color.text.tertiary }}>ZK Circuit</Typography>
-              <Typography sx={{ fontSize: '0.75rem', fontFamily: tokens.font.mono, color: tokens.color.text.secondary }}>
+              <Typography
+                sx={{ fontSize: '0.75rem', fontFamily: tokens.font.mono, color: tokens.color.text.secondary }}
+              >
                 voting.zkir
               </Typography>
             </Box>
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography sx={{ fontSize: '0.75rem', color: tokens.color.text.tertiary }}>Estimated Gas Fee</Typography>
-              <Typography sx={{ fontSize: '0.75rem', fontFamily: tokens.font.mono, color: tokens.color.text.secondary }}>
+              <Typography
+                sx={{ fontSize: '0.75rem', fontFamily: tokens.font.mono, color: tokens.color.text.secondary }}
+              >
                 &lt; 0.001 tDUST
               </Typography>
             </Box>
@@ -361,7 +371,9 @@ export const VotingPanel: React.FC<VotingPanelProps> = ({
             variant="contained"
             disabled={isApproving}
             onClick={handleApproveAndSubmit}
-            startIcon={isApproving ? <CircularProgress size={16} sx={{ color: '#fff' }} /> : <CheckIcon sx={{ fontSize: 16 }} />}
+            startIcon={
+              isApproving ? <CircularProgress size={16} sx={{ color: '#fff' }} /> : <CheckIcon sx={{ fontSize: 16 }} />
+            }
             sx={{
               background: `linear-gradient(135deg, ${tokens.color.accent.violet}, #6d28d9)`,
               color: '#fff',
@@ -437,9 +449,7 @@ const VoteOption: React.FC<VoteOptionProps> = ({
     >
       {label}
     </Typography>
-    <Typography sx={{ fontSize: '0.6875rem', color: tokens.color.text.tertiary }}>
-      {description}
-    </Typography>
+    <Typography sx={{ fontSize: '0.6875rem', color: tokens.color.text.tertiary }}>{description}</Typography>
     {selected && (
       <Box sx={{ mt: 1, display: 'flex', justifyContent: 'center' }}>
         <CheckIcon sx={{ fontSize: 16, color }} />

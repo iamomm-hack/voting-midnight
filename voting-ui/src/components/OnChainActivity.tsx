@@ -9,14 +9,13 @@ interface ActivityItem {
   verified: boolean;
 }
 
-export const OnChainActivity: React.FC<{ totalVotes?: number; isOpen?: boolean }> = ({ totalVotes = 142, isOpen = true }) => {
+export const OnChainActivity: React.FC<{ totalVotes?: number; isOpen?: boolean }> = ({
+  totalVotes = 142,
+  isOpen = true,
+}) => {
   const items: ActivityItem[] = [
-    ...(totalVotes > 0
-      ? [{ type: 'Proof verified — vote included in tally', time: 'Just now', verified: true }]
-      : []),
-    ...(!isOpen
-      ? [{ type: 'Voting period closed', time: '2m ago', verified: true }]
-      : []),
+    ...(totalVotes > 0 ? [{ type: 'Proof verified — vote included in tally', time: 'Just now', verified: true }] : []),
+    ...(!isOpen ? [{ type: 'Voting period closed', time: '2m ago', verified: true }] : []),
     { type: 'Voting period started', time: '1h ago', verified: true },
     { type: 'Proposal created', time: '2h ago', txHash: '0x4f8a…c4b6', verified: true },
   ];
@@ -58,19 +57,17 @@ export const OnChainActivity: React.FC<{ totalVotes?: number; isOpen?: boolean }
                   flexShrink: 0,
                 }}
               />
-              <Typography sx={{ fontSize: '0.8125rem', color: tokens.color.text.secondary }}>
-                {item.type}
-              </Typography>
+              <Typography sx={{ fontSize: '0.8125rem', color: tokens.color.text.secondary }}>{item.type}</Typography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexShrink: 0 }}>
               {item.txHash && (
-                <Typography sx={{ fontSize: '0.6875rem', fontFamily: tokens.font.mono, color: tokens.color.text.tertiary }}>
+                <Typography
+                  sx={{ fontSize: '0.6875rem', fontFamily: tokens.font.mono, color: tokens.color.text.tertiary }}
+                >
                   {item.txHash}
                 </Typography>
               )}
-              <Typography sx={{ fontSize: '0.6875rem', color: tokens.color.text.tertiary }}>
-                {item.time}
-              </Typography>
+              <Typography sx={{ fontSize: '0.6875rem', color: tokens.color.text.tertiary }}>{item.time}</Typography>
             </Box>
           </Box>
         ))}

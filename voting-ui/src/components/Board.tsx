@@ -105,7 +105,10 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$, isDemo
 
   useEffect(() => {
     if (!boardDeployment) return;
-    if (boardDeployment.status === 'in-progress') { setIsWorking(true); return; }
+    if (boardDeployment.status === 'in-progress') {
+      setIsWorking(true);
+      return;
+    }
     setIsWorking(false);
     if (boardDeployment.status === 'failed') {
       setErrorMessage(boardDeployment.error.message || 'Encountered an error.');
@@ -123,7 +126,8 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$, isDemo
   const isOpen = votingState ? votingState.state === VotingState.VOTING_OPEN : demoState.isOpen;
   const hasVoted = demoState.hasVoted;
   const totalVotes = yesVotes + noVotes;
-  const contractAddr = deployedAPI?.deployedContractAddress || '0x02004f8a2e1d7092c4b693e507119280ab4cd09d762d312e75e181d11e891ab0';
+  const contractAddr =
+    deployedAPI?.deployedContractAddress || '0x02004f8a2e1d7092c4b693e507119280ab4cd09d762d312e75e181d11e891ab0';
 
   // Empty state — no deployment
   if (!boardDeployment$ && !isDemo) {
@@ -196,11 +200,16 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$, isDemo
             />
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button onClick={() => setJoinDialogOpen(false)} sx={{ color: tokens.color.text.tertiary }}>Cancel</Button>
+            <Button onClick={() => setJoinDialogOpen(false)} sx={{ color: tokens.color.text.tertiary }}>
+              Cancel
+            </Button>
             <Button
               variant="contained"
               disabled={!addressInput.trim()}
-              onClick={() => { setJoinDialogOpen(false); onJoinBoard(addressInput.trim()); }}
+              onClick={() => {
+                setJoinDialogOpen(false);
+                onJoinBoard(addressInput.trim());
+              }}
               sx={{ background: tokens.color.accent.violet }}
             >
               Connect
@@ -231,7 +240,11 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$, isDemo
           }}
         >
           <Typography sx={{ fontSize: '0.8125rem', color: tokens.color.accent.red }}>{errorMessage}</Typography>
-          <Button size="small" onClick={() => setErrorMessage(undefined)} sx={{ color: tokens.color.accent.red, minWidth: 'auto' }}>
+          <Button
+            size="small"
+            onClick={() => setErrorMessage(undefined)}
+            sx={{ color: tokens.color.accent.red, minWidth: 'auto' }}
+          >
             ✕
           </Button>
         </Box>
@@ -311,7 +324,7 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$, isDemo
                   whiteSpace: 'pre-wrap',
                 }}
               >
-{`circuit voting {
+                {`circuit voting {
   state VotingState { VOTING_OPEN, VOTING_ENDED }
   
   ledger {

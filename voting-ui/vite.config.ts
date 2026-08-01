@@ -21,6 +21,8 @@ import topLevelAwait from 'vite-plugin-top-level-await';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // Relative assets work both locally and under the repository's GitHub Pages subpath.
+  base: './',
   cacheDir: './.vite',
   build: {
     sourcemap: false,
@@ -33,7 +35,7 @@ export default defineConfig({
           if (id.includes('onchain-runtime-v3')) return 'wasm';
         },
       },
-      },
+    },
     commonjsOptions: {
       // Transform CommonJS to ESM more aggressively
       transformMixedEsModules: true,

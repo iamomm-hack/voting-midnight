@@ -5,7 +5,14 @@ import { tokens } from '../config/tokens';
 const Stat: React.FC<{ label: string; value: string; color?: string }> = ({ label, value, color }) => (
   <Box sx={{ textAlign: 'right' }}>
     <Typography sx={{ fontSize: '0.6875rem', color: tokens.color.text.tertiary, mb: 0.25 }}>{label}</Typography>
-    <Typography sx={{ fontSize: '0.9375rem', fontWeight: 600, color: color || tokens.color.text.primary, fontFamily: tokens.font.mono }}>
+    <Typography
+      sx={{
+        fontSize: '0.9375rem',
+        fontWeight: 600,
+        color: color || tokens.color.text.primary,
+        fontFamily: tokens.font.mono,
+      }}
+    >
       {value}
     </Typography>
   </Box>
@@ -51,7 +58,8 @@ export const GovernanceOverview: React.FC<{ totalVotes: number; isOpen: boolean 
         Vote privately. Verify publicly.
       </Typography>
       <Typography sx={{ fontSize: '0.875rem', color: tokens.color.text.secondary, lineHeight: 1.6, maxWidth: 460 }}>
-        Individual choices remain hidden through zero-knowledge proofs. Aggregate results are verifiable on-chain by anyone.
+        Individual choices remain hidden through zero-knowledge proofs. Aggregate results are verifiable on-chain by
+        anyone.
       </Typography>
     </Box>
 
@@ -69,8 +77,14 @@ export const GovernanceOverview: React.FC<{ totalVotes: number; isOpen: boolean 
       <Stat label="Network" value="Preprod" />
       <Box sx={{ width: '1px', height: 32, background: tokens.color.border.subtle }} />
       <Stat label="Proposals" value="1" />
-      <Box sx={{ width: '1px', height: 32, background: tokens.color.border.subtle, display: { xs: 'none', sm: 'block' } }} />
-      <Stat label="Verified Votes" value={String(totalVotes)} color={isOpen ? tokens.color.text.primary : tokens.color.text.tertiary} />
+      <Box
+        sx={{ width: '1px', height: 32, background: tokens.color.border.subtle, display: { xs: 'none', sm: 'block' } }}
+      />
+      <Stat
+        label="Verified Votes"
+        value={String(totalVotes)}
+        color={isOpen ? tokens.color.text.primary : tokens.color.text.tertiary}
+      />
     </Box>
   </Box>
 );

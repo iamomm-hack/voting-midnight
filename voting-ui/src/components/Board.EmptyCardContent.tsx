@@ -1,6 +1,17 @@
 import React, { useState } from 'react';
 import { type ContractAddress } from '@midnight-ntwrk/midnight-js-protocol/compact-runtime';
-import { Box, Button, CardActions, CardContent, Typography, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import {
+  Box,
+  Button,
+  CardActions,
+  CardContent,
+  Typography,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from '@mui/material';
 import AddCircleOutlinedIcon from '@mui/icons-material/AddCircleOutlined';
 import LinkIcon from '@mui/icons-material/Link';
 import LockIcon from '@mui/icons-material/Lock';
@@ -44,7 +55,9 @@ export const EmptyCardContent: React.FC<Readonly<EmptyCardContentProps>> = ({
         </Typography>
       </CardContent>
 
-      <CardActions sx={{ px: 4, pb: 4, pt: 0, justifyContent: 'center', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+      <CardActions
+        sx={{ px: 4, pb: 4, pt: 0, justifyContent: 'center', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}
+      >
         <Button
           variant="contained"
           startIcon={<AddCircleOutlinedIcon />}

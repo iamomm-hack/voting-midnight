@@ -60,7 +60,7 @@ export class VotingAPI implements DeployedVotingAPI {
         void privateState;
         return {
           state: ledgerState.state,
-          proposalTitle: "Community Governance Proposal #1",
+          proposalTitle: 'Community Governance Proposal #1',
           yesVotes: ledgerState.yesVotes,
           noVotes: ledgerState.noVotes,
           totalVoters: ledgerState.totalVoters,
@@ -115,7 +115,11 @@ export class VotingAPI implements DeployedVotingAPI {
     return new VotingAPI(deployedVotingContract, providers, logger);
   }
 
-  static async join(providers: VotingProviders, contractAddress: ContractAddress = DEFAULT_CONTRACT_ADDRESS, logger?: Logger): Promise<VotingAPI> {
+  static async join(
+    providers: VotingProviders,
+    contractAddress: ContractAddress = DEFAULT_CONTRACT_ADDRESS,
+    logger?: Logger,
+  ): Promise<VotingAPI> {
     logger?.info({
       joinContract: {
         contractAddress,

@@ -63,4 +63,5 @@ managed/
 .claude
 .midnight-expert
 
-*docs
+# Keep project documentation tracked; only generated dependency docs should be ignored.
+node_modules/**/docs/

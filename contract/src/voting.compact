@@ -1,7 +1,8 @@
 // Contract for Midnight Privacy-Preserving Voting DApp
 // Public data: proposal title, total yes/no votes, voting state, sequence.
 // Private data: voter secret key (never revealed on-chain).
-// Privacy guarantees: Voter identity remains zero-knowledge protected via disclose().
+// Privacy guarantees: the wallet identity and local secret remain private. A stable,
+// unlinkable nullifier is disclosed to enforce one ballot per local voting identity.
 
 pragma language_version 0.23;
 
@@ -19,10 +20,13 @@ export ledger yesVotes: Counter;
 export ledger noVotes: Counter;
 export ledger totalVoters: Counter;
 export ledger sequence: Counter;
+export ledger usedNullifiers: Set<Bytes<32>>;
+export ledger adminKey: Bytes<32>;
 
 constructor() {
   state = VotingState.VOTING_OPEN;
   proposalTitle = pad(32, "Gov Proposal #1");
+  adminKey = disclose(adminPublicKey(localSecretKey()));
   sequence.increment(1);
 }
 
@@ -30,8 +34,10 @@ witness localSecretKey(): Bytes<32>;
 
 export circuit castVote(voteChoice: Boolean): [] {
   assert(state == VotingState.VOTING_OPEN, "Voting round is not open");
-  
-  const voterPk = disclose(voterPublicKey(localSecretKey(), sequence as Field as Bytes<32>));
+
+  const nullifier = disclose(voterNullifier(localSecretKey(), adminKey));
+  assert(!usedNullifiers.member(nullifier), "This voting identity has already voted");
+  usedNullifiers.insert(nullifier);
   
   // Vote choice is intentionally disclosed since it updates public tallies
   const choice = disclose(voteChoice);
@@ -47,10 +53,16 @@ export circuit castVote(voteChoice: Boolean): [] {
 
 export circuit endVoting(): [] {
   assert(state == VotingState.VOTING_OPEN, "Voting is already closed");
+  const callerAdminKey = disclose(adminPublicKey(localSecretKey()));
+  assert(callerAdminKey == adminKey, "Only the poll administrator can end voting");
   state = VotingState.ENDED;
   sequence.increment(1);
 }
 
-export circuit voterPublicKey(sk: Bytes<32>, sequence: Bytes<32>): Bytes<32> {
-  return persistentHash<Vector<3, Bytes<32>>>([pad(32, "voting:pk:"), sequence, sk]);
+export circuit voterNullifier(sk: Bytes<32>, pollId: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<3, Bytes<32>>>([pad(32, "voting:nullifier:"), pollId, sk]);
+}
+
+export circuit adminPublicKey(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "voting:admin:"), sk]);
 }

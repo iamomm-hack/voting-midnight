@@ -25,7 +25,15 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ yesV
       }}
     >
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography sx={{ fontSize: '0.6875rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: tokens.color.text.tertiary }}>
+        <Typography
+          sx={{
+            fontSize: '0.6875rem',
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            color: tokens.color.text.tertiary,
+          }}
+        >
           Current Results
         </Typography>
         <Typography sx={{ fontSize: '0.6875rem', fontFamily: tokens.font.mono, color: tokens.color.text.tertiary }}>
@@ -34,7 +42,16 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ yesV
       </Box>
 
       {/* Bar */}
-      <Box sx={{ display: 'flex', height: 8, borderRadius: 4, overflow: 'hidden', mb: 2, background: 'rgba(255,255,255,0.04)' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          height: 8,
+          borderRadius: 4,
+          overflow: 'hidden',
+          mb: 2,
+          background: 'rgba(255,255,255,0.04)',
+        }}
+      >
         <Box
           sx={{
             width: `${yesPct}%`,

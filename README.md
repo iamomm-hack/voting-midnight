@@ -1,350 +1,172 @@
-# 🌑 Midnight Privacy Voting DApp
+# Midnight Private Voting
 
-A privacy-preserving decentralized governance application built on the **Midnight Network** using Zero-Knowledge (ZK) smart contracts. Individual voting choices remain completely private while aggregate results are publicly verifiable on-chain.
+[![CI](https://github.com/iamomm-hack/voting-midnight/actions/workflows/ci.yml/badge.svg)](https://github.com/iamomm-hack/voting-midnight/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-![Governance Dashboard](ss/Screenshot%202026-07-27%20171837.png)
+A production-oriented voting dApp for the Midnight Network. It uses a Compact zero-knowledge contract, poll-scoped nullifiers, a React wallet UI, contract tests, and automated build/deployment.
 
----
+- **Chosen Level 3 idea:** Private Voting — anonymous participation with publicly verifiable tallies
+- **Live demo:** [GitHub Pages](https://iamomm-hack.github.io/voting-midnight/)
+- **Network:** Midnight Preprod
+- **Deployed contract:** `0x02004f8a2e1d7092c4b693e507119280ab4cd09d762d312e75e181d11e891ab0`
+- **Product proposal:** [docs/PRODUCT_PROPOSAL.md](docs/PRODUCT_PROPOSAL.md)
+- **Submission checklist:** [docs/SUBMISSION_CHECKLIST.md](docs/SUBMISSION_CHECKLIST.md)
 
-## 📋 Table of Contents
+![Governance dashboard](ss/Screenshot%202026-07-27%20171837.png)
 
-- [Overview](#overview)
-- [Screenshots](#screenshots)
-- [Privacy Model](#privacy-model)
-- [Architecture](#architecture)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Smart Contract Compilation](#smart-contract-compilation)
-- [Build](#build)
-- [Deployment](#deployment)
-- [Running the Web UI](#running-the-web-ui)
-- [Contract Details](#contract-details)
-- [How It Works](#how-it-works)
-- [License](#license)
+## What the dApp does
 
----
+1. A user connects a Midnight-compatible browser wallet.
+2. The app supplies a random local secret as a private Compact witness.
+3. `castVote` proves knowledge of that secret, derives a poll-scoped nullifier, rejects a reused nullifier, and records the selected tally.
+4. The public ledger exposes aggregate YES/NO counts and participation count for verification.
+5. Only the identity that deployed the poll can execute `endVoting`.
 
-## Overview
+The repository includes the browser UI, reusable API package, CLI/deployment utilities, Compact source and generated proof assets.
 
-This DApp enables community members to participate in on-chain governance proposals **without exposing their identities**. Voters generate local Zero-Knowledge proofs that prove they hold a valid secret key and haven't voted yet, while the Compact smart contract safely updates public tallies on the Midnight Preprod testnet.
+## Privacy model
 
-### Key Features
+This implementation provides **voter-identity privacy**, not sealed ballot-choice privacy. That distinction is intentional and should be stated clearly in demos and review material.
 
-- **🔒 Anonymous Voting** — Users cast votes without revealing their wallet identity or secret credentials on-chain
-- **✅ Verifiable Tallies** — Public ledger accurately tallies YES/NO votes while keeping individual choices private
-- **🚫 Double-Vote Prevention** — Cryptographic nullifiers via `persistentHash` ensure each voter casts only one vote
-- **🌐 Multi-Interface** — Complete CLI launcher + institutional-grade React web UI
-- **💳 Native Wallet Support** — Lace Wallet & 1AM Wallet integration via `window.midnight` API
+### What an observer can learn
 
----
+- proposal title and whether voting is open or ended;
+- YES, NO and total participation counts;
+- the choice contributed by a transaction, because the selected public counter changes;
+- a poll-scoped nullifier for each accepted voting identity;
+- transaction timing and normal public network metadata.
 
-## Screenshots
+### What an observer cannot learn from the contract
 
-### Governance Dashboard — Proposals View
-The main dashboard displays active governance proposals with real-time voting results, quorum tracking, and ZK circuit status.
+- the voter's `localSecretKey`, which remains in private application state;
+- the wallet identity represented by that secret;
+- a reusable global voter identifier: the nullifier is domain-separated by the poll's admin key;
+- enough information to submit a second valid ballot using an already-consumed private identity.
 
-![Proposals View](ss/Screenshot%202026-07-27%20171837.png)
+### Selective disclosure design
 
-### Wallet Connection
-Native support for Midnight Lace Wallet and 1AM Wallet browser extensions with auto-detection.
+| Value | Treatment | Reason |
+|---|---|---|
+| Local secret | Private witness | Proves authority without exposing the secret |
+| Poll-scoped nullifier | Disclosed hash | Enforces one ballot per private identity |
+| Vote choice | Disclosed to circuit/public tally | Enables immediately verifiable results |
+| Aggregate tallies | Public ledger | Lets anyone audit the outcome |
+| Admin key | Disclosed hash | Authorizes poll closure without exposing admin secret |
 
-![Wallet Selector](ss/Screenshot%202026-07-27%20171913.png)
+The contract does not claim Sybil resistance: one person who creates multiple independent local identities can vote more than once unless a separate eligibility/allowlist layer is added. The current guarantee is one accepted vote per private identity per poll.
 
-### Wallet Integration with Dashboard
-Connect wallet overlay showing detected browser extensions alongside the governance interface.
+## Security properties
 
-![Wallet Integration](ss/Screenshot%202026-07-27%20173301.png)
+- duplicate nullifiers are rejected on-chain;
+- nullifiers are separated across polls to reduce cross-poll correlation;
+- ballots are rejected after poll closure;
+- only the poll administrator's private witness can close the poll;
+- secrets are never written to public ledger state;
+- tests cover success paths, privacy-state preservation and authorization failures.
 
-### On-Chain Activity Feed
-Real-time feed of verified ZK proof submissions, voting period state transitions, and proposal creation events.
+## Tests
 
-![Activity View](ss/Screenshot%202026-07-27%20171851.png)
-
-### Technical Documentation
-Institutional-grade specifications covering ZK privacy model, Compact circuit logic, testnet infrastructure endpoints, and wallet integration flow.
-
-![Documentation View](ss/Screenshot%202026-07-27%20171905.png)
-
----
-
-## Privacy Model
-
-| Category | Data | Visibility |
-|----------|------|------------|
-| **Public State** | Proposal title, YES/NO vote counts, voter count, voting state, admin address | On-chain, visible to all |
-| **Private State** | Voter secret key (`localSecretKey`), individual vote choice, wallet credentials | Local browser memory only |
-| **Disclosed** | Vote validity proof, voter public key (derived nullifier) | ZK proof output only |
-
-### ZK Guarantees
-
-- Vote choice is encrypted and **never leaves the voter's device**
-- Voter identity is **not disclosed** on-chain
-- ZK proof is generated **locally** before submission
-- Aggregate tally is **publicly verifiable** by any observer
-- Nullifier prevents double-voting **without revealing identity**
-
----
-
-## Architecture
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                        Browser / CLI                             │
-│  ┌─────────────┐  ┌──────────────┐  ┌────────────────────────┐  │
-│  │ Lace Wallet │  │  React UI    │  │    CLI Launcher        │  │
-│  │ / 1AM Wallet│  │  (Vite+MUI)  │  │  (Node.js + ts-node)   │  │
-│  └──────┬──────┘  └──────┬───────┘  └───────────┬────────────┘  │
-│         │                │                      │                │
-│         └────────────────┼──────────────────────┘                │
-│                          │                                       │
-│              ┌───────────▼───────────┐                           │
-│              │     VotingAPI         │                           │
-│              │  (api/ package)       │                           │
-│              └───────────┬───────────┘                           │
-└──────────────────────────┼───────────────────────────────────────┘
-                           │
-          ┌────────────────┼────────────────┐
-          │                │                │
-  ┌───────▼──────┐ ┌──────▼───────┐ ┌──────▼──────┐
-  │  Proof Server│ │ Indexer      │ │  RPC Node   │
-  │  (Docker)    │ │ (GraphQL)    │ │  (Substrate)│
-  │  :6300       │ │ preprod.mn   │ │  preprod.mn │
-  └──────────────┘ └──────────────┘ └─────────────┘
-                           │
-               ┌───────────▼───────────┐
-               │  Midnight Blockchain  │
-               │   (Preprod Testnet)   │
-               └───────────────────────┘
-```
-
----
-
-## Tech Stack
-
-| Component | Technology |
-|-----------|------------|
-| Smart Contract Language | Compact `v0.31.0` |
-| Blockchain | Midnight Preprod Testnet |
-| SDK | `@midnight-ntwrk/midnight-js` `v4.1.1` |
-| Wallet SDK | `@midnight-ntwrk/wallet-sdk` `v1.0.0` |
-| Proof Server | Midnight Docker container (port `6300`) |
-| Frontend | React 19, Vite 8, Material UI 6 |
-| CLI | TypeScript, Node.js v24+, ts-node |
-| State Management | RxJS Observables |
-
----
-
-## Project Structure
-
-```
-midnight/mid/
-├── contract/                   # Compact smart contract source & compilation output
-│   └── src/
-│       ├── managed/voting/     # Compiled ZKIR, proving keys, verifier keys
-│       └── witnesses.ts        # TypeScript witness declarations
-├── api/                        # VotingAPI — deploy, join, state observables, provider types
-│   └── src/
-│       └── index.ts            # Core API exports (VotingAPI, providers, private state)
-├── voting-cli/                 # CLI launcher for wallet setup, deployment, and voting
-│   └── src/
-│       ├── config.ts           # Environment configs (Standalone, Preview, Preprod)
-│       ├── generate-dust.ts    # NIGHT → DUST gas token conversion
-│       ├── wallet-utils.ts     # Wallet balance polling & fund detection
-│       ├── launcher/
-│       │   ├── preprod.ts      # Interactive Preprod deployment launcher
-│       │   └── deploy-direct.ts# Non-interactive direct deployment script
-│       └── proof-server.yml    # Docker Compose for local proof server
-├── voting-ui/                  # React web application
-│   └── src/
-│       ├── App.tsx             # Root component with tab navigation
-│       ├── config/
-│       │   ├── tokens.ts       # Graphite design system tokens
-│       │   └── theme.ts        # MUI theme configuration
-│       └── components/
-│           ├── TopNavigation.tsx      # Navigation bar with wallet connector
-│           ├── GovernanceOverview.tsx  # Hero section with network stats
-│           ├── Board.tsx              # Proposal card with voting panel
-│           ├── VotingPanel.tsx        # Vote casting with wallet approval modal
-│           ├── ResultsVisualization.tsx# Real-time vote tally bar chart
-│           ├── OnChainActivity.tsx    # ZK proof verification event feed
-│           └── DocsView.tsx           # Technical specification documentation
-├── ss/                         # Application screenshots
-├── package.json                # Root workspace configuration
-└── README.md
-```
-
----
-
-## Prerequisites
-
-| Requirement | Version | Purpose |
-|-------------|---------|---------|
-| Node.js | `≥ v24.11.1` | Runtime |
-| npm | `≥ v10` | Package management |
-| Docker Desktop | Latest | Proof server container |
-| Compact Compiler | `v0.31.0` | Smart contract compilation |
-| Lace Wallet Extension | Latest | Browser wallet (Web UI) |
-
----
-
-## Installation
+The contract suite contains six voting-specific simulator tests and runs without a blockchain node or proof server after Compact compilation.
 
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd midnight/mid
-
-# Install all workspace dependencies
-npm install
+npm ci --legacy-peer-deps
+npm run compact --workspace=@midnight-ntwrk/voting-contract
+npm test
 ```
 
-> This repository uses **NPM Workspaces**. Dependencies for `contract`, `api`, `voting-cli`, and `voting-ui` are resolved automatically from the root.
+Expected summary:
 
----
-
-## Smart Contract Compilation
-
-Compile the Compact voting contract and generate Zero-Knowledge circuits:
-
-```bash
-cd contract
-npm run compact    # Compile voting.compact → ZKIR + proving keys
-npm run build      # Generate TypeScript bindings
-cd ..
+```text
+Test Files  1 passed (1)
+Tests       6 passed (6)
 ```
 
-**Output:** `contract/src/managed/voting/` — contains compiled ZKIR assets, proving keys, and verifier keys.
+The CI badge at the top links to the full compile/test/build run. Capture the successful test summary from that run for the required submission screenshot.
 
----
+## CI/CD
 
-## Build
+`.github/workflows/ci.yml` runs on every push and pull request:
 
-Build all workspace packages:
+1. installs Node.js 24.11.1 and Compact 0.31.0;
+2. installs the locked npm dependency graph;
+3. compiles the Compact contract and proof assets;
+4. runs contract tests, type checks and lint checks;
+5. builds the production React app;
+6. deploys `voting-ui/dist` to GitHub Pages after a successful push to `main`.
+
+If Pages has not been enabled for this repository, open **Settings → Pages** and choose **GitHub Actions** as the source once.
+
+## Run locally
+
+### Prerequisites
+
+- Node.js 24.11.1 or newer
+- npm 10+
+- Compact compiler 0.31.0
+- Docker Desktop for the local proof server
+- Lace or another compatible Midnight wallet
 
 ```bash
-# Build everything
+git clone https://github.com/iamomm-hack/voting-midnight.git
+cd voting-midnight
+npm ci --legacy-peer-deps
+npm run compact --workspace=@midnight-ntwrk/voting-contract
 npm run build
-
-# Or build individually:
-npm run build --workspace=@midnight-ntwrk/voting-api
-npm run build --workspace=@midnight-ntwrk/voting-cli
-npm run build --workspace=@midnight-ntwrk/voting-ui
+npm run dev --workspace=@midnight-ntwrk/voting-ui
 ```
 
----
+Open `http://localhost:5173`.
 
-## Deployment
+## Deploy or join a contract
 
-### 1. Start the Proof Server
+Start the proof server:
 
 ```bash
-cd voting-cli
-docker compose -f proof-server.yml up -d
+docker compose -f voting-cli/proof-server.yml up -d
 ```
 
-Verify it's running at `http://localhost:6300/health`.
+For interactive Preprod deployment:
 
-### 2. Fund Your Wallet
+```bash
+npm run preprod-remote --workspace=@midnight-ntwrk/voting-cli
+```
 
-Visit the **[Midnight Preprod Faucet](https://midnight-tmnight-preprod.nethermind.dev/)** and request 1000 tNight tokens for your wallet address.
-
-### 3. Deploy the Contract
-
-**Option A — Non-interactive (recommended):**
+For the existing non-interactive launcher:
 
 ```bash
 npm run deploy-direct
 ```
 
-This auto-generates a fresh wallet, requests faucet funding, converts NIGHT → DUST, and deploys.
+ZK proving can require several gigabytes of memory. The CLI launchers already set an 8 GB Node heap.
 
-**Option B — Interactive CLI:**
+## Repository layout
 
-```bash
-cd voting-cli
-NODE_OPTIONS="--max-old-space-size=8192" npm run preprod-remote
+```text
+contract/      Compact source, witnesses, generated circuits and unit tests
+api/           Deploy/join/call API and public derived-state observable
+voting-cli/    Wallet, proof-server and network deployment launchers
+voting-ui/     React + Vite browser application
+ss/            Product screenshots
+docs/          Proposal, demo script and submission checklist
+.github/       CI/CD and security workflows
 ```
 
-Follow the interactive prompts to:
-1. Build or restore a wallet from seed
-2. Deploy or connect to a voting contract
-3. Cast votes and manage proposals
+## Screenshots
 
-### Deployment Flow
+| View | Screenshot |
+|---|---|
+| Proposals | [Dashboard](ss/Screenshot%202026-07-27%20171837.png) |
+| Activity | [On-chain activity](ss/Screenshot%202026-07-27%20171851.png) |
+| Documentation | [Privacy documentation](ss/Screenshot%202026-07-27%20171905.png) |
+| Wallet | [Wallet connection](ss/Screenshot%202026-07-27%20171913.png) |
 
-```
-Fund Wallet (tNight) → Generate DUST Gas → Deploy ZK Contract → Contract Address
-```
+## Known limitations
 
-> **Note:** The `--max-old-space-size=8192` flag is required for ZK proof generation memory.
-
----
-
-## Running the Web UI
-
-```bash
-cd voting-ui
-npm run dev
-```
-
-Open **http://localhost:5173/** in your browser to access the governance dashboard.
-
-### UI Navigation
-
-| Tab | Description |
-|-----|-------------|
-| **Proposals** | Active governance proposals, voting panel, real-time results |
-| **Activity** | On-chain ZK proof verification event feed |
-| **Docs** | Technical specification — ZK privacy model, Compact circuits, testnet endpoints |
-
----
-
-## Contract Details
-
-| Field | Value |
-|-------|-------|
-| **Network** | Midnight Preprod Testnet |
-| **Contract Address** | `0x02004f8a2e1d7092c4b693e507119280ab4cd09d762d312e75e181d11e891ab0` |
-| **RPC Node** | `https://rpc.preprod.midnight.network` |
-| **Indexer GraphQL** | `https://indexer.preprod.midnight.network/api/v4/graphql` |
-| **Indexer WebSocket** | `wss://indexer.preprod.midnight.network/api/v4/graphql/ws` |
-| **Proof Server** | `http://localhost:6300` (Docker) |
-| **Faucet** | `https://midnight-tmnight-preprod.nethermind.dev/` |
-
----
-
-## How It Works
-
-### Compact Circuit (`voting.compact`)
-
-```compact
-export circuit castVote(voteChoice: Boolean): [] {
-  assert(state == VotingState.VOTING_OPEN);
-  const voterPk = disclose(voterPublicKey(localSecretKey()));
-  if (disclose(voteChoice)) yesVotes.increment(1);
-}
-```
-
-### Voting Flow
-
-1. **Connect Wallet** — Select Lace or 1AM Wallet from the navigation bar
-2. **Select Proposal** — View active governance proposals and their current results
-3. **Cast Vote** — Choose FOR or AGAINST and confirm in the approval modal
-4. **ZK Proof Generation** — A zero-knowledge proof is generated locally in your browser
-5. **On-Chain Submission** — The proof is submitted to the Midnight blockchain
-6. **Tally Update** — Public vote counts update without revealing individual choices
-
-### Token Model
-
-| Token | Purpose |
-|-------|---------|
-| **NIGHT** | Base token received from the faucet |
-| **DUST** | Gas token generated from NIGHT, required for all transactions |
-
----
+- The deployed address above may refer to an earlier circuit build; redeploy after changing Compact code and update the address before final submission.
+- GitHub Pages must be enabled once in repository settings before the demo URL becomes available.
+- Sybil resistance and credential-based eligibility are out of scope for this cycle.
+- Real-time public tallies reveal each anonymous transaction's choice through its counter delta.
 
 ## License
 
-MIT — see [LICENSE](LICENSE) for details.
+MIT — see [LICENSE](LICENSE).

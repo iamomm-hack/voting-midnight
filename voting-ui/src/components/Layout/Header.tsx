@@ -30,10 +30,21 @@ export const Header: React.FC = () => (
           }}
         >
           <LockIcon sx={{ color: '#7c4dff' }} />
-          <Typography variant="h6" sx={{ fontWeight: 800, background: 'linear-gradient(90deg, #b47cff, #66ffa6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 800,
+              background: 'linear-gradient(90deg, #b47cff, #66ffa6)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
             MIDNIGHT
           </Typography>
-          <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, borderLeft: '1px solid rgba(255,255,255,0.15)', pl: 1 }}>
+          <Typography
+            variant="caption"
+            sx={{ color: '#94a3b8', fontWeight: 600, borderLeft: '1px solid rgba(255,255,255,0.15)', pl: 1 }}
+          >
             Zero-Knowledge Governance
           </Typography>
         </Box>
@@ -50,7 +61,12 @@ export const Header: React.FC = () => (
         <Chip
           label="Preprod Testnet"
           size="small"
-          sx={{ background: 'rgba(124,77,255,0.2)', color: '#b47cff', border: '1px solid rgba(124,77,255,0.4)', fontWeight: 600 }}
+          sx={{
+            background: 'rgba(124,77,255,0.2)',
+            color: '#b47cff',
+            border: '1px solid rgba(124,77,255,0.4)',
+            fontWeight: 600,
+          }}
         />
       </Box>
     </Box>

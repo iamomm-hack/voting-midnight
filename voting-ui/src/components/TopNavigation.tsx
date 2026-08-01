@@ -90,10 +90,7 @@ export interface TopNavigationProps {
   onTabChange?: (tab: 'proposals' | 'activity' | 'docs') => void;
 }
 
-export const TopNavigation: React.FC<TopNavigationProps> = ({
-  activeTab = 'proposals',
-  onTabChange,
-}) => {
+export const TopNavigation: React.FC<TopNavigationProps> = ({ activeTab = 'proposals', onTabChange }) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [connectedWallet, setConnectedWallet] = useState<string | null>(null);
   const [connectedAddress, setConnectedAddress] = useState<string | null>(null);
@@ -104,13 +101,19 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
     setError(null);
     setAnchorEl(e.currentTarget);
   };
-  const handleClose = () => { setAnchorEl(null); setConnecting(null); };
+  const handleClose = () => {
+    setAnchorEl(null);
+    setConnecting(null);
+  };
 
   const handleConnect = async (wallet: { id: string; name: string; api: any }) => {
     if (!wallet.api) {
       // Wallet not installed — open install page
       if (wallet.id === 'lace') {
-        window.open('https://chromewebstore.google.com/detail/midnight-lace/ejidikmeadkeeokldljcoafnlhkdlofd', '_blank');
+        window.open(
+          'https://chromewebstore.google.com/detail/midnight-lace/ejidikmeadkeeokldljcoafnlhkdlofd',
+          '_blank',
+        );
       } else {
         window.open('https://midnight.network/wallets', '_blank');
       }
@@ -204,27 +207,17 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
           >
             <Typography sx={{ fontSize: '11px', fontWeight: 800, color: '#fff', lineHeight: 1 }}>M</Typography>
           </Box>
-          <Typography sx={{ fontSize: '0.875rem', fontWeight: 700, color: tokens.color.text.primary, letterSpacing: '-0.01em' }}>
+          <Typography
+            sx={{ fontSize: '0.875rem', fontWeight: 700, color: tokens.color.text.primary, letterSpacing: '-0.01em' }}
+          >
             Midnight
           </Typography>
         </Box>
 
         <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 0.5 }}>
-          <NavLink
-            label="Proposals"
-            active={activeTab === 'proposals'}
-            onClick={() => onTabChange?.('proposals')}
-          />
-          <NavLink
-            label="Activity"
-            active={activeTab === 'activity'}
-            onClick={() => onTabChange?.('activity')}
-          />
-          <NavLink
-            label="Docs"
-            active={activeTab === 'docs'}
-            onClick={() => onTabChange?.('docs')}
-          />
+          <NavLink label="Proposals" active={activeTab === 'proposals'} onClick={() => onTabChange?.('proposals')} />
+          <NavLink label="Activity" active={activeTab === 'activity'} onClick={() => onTabChange?.('activity')} />
+          <NavLink label="Docs" active={activeTab === 'docs'} onClick={() => onTabChange?.('docs')} />
         </Box>
       </Box>
 
@@ -300,13 +293,32 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
           }}
         >
           <Box sx={{ p: 1 }}>
-            <Typography sx={{ px: 1.5, py: 1, fontSize: '0.6875rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: tokens.color.text.tertiary }}>
+            <Typography
+              sx={{
+                px: 1.5,
+                py: 1,
+                fontSize: '0.6875rem',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                color: tokens.color.text.tertiary,
+              }}
+            >
               {connectedWallet ? 'Connected' : 'Select Wallet'}
             </Typography>
 
             {/* Error */}
             {error && (
-              <Box sx={{ mx: 1.5, mb: 1, p: 1.5, borderRadius: tokens.radius.md, background: tokens.color.accent.redMuted, border: `1px solid ${tokens.color.border.error}` }}>
+              <Box
+                sx={{
+                  mx: 1.5,
+                  mb: 1,
+                  p: 1.5,
+                  borderRadius: tokens.radius.md,
+                  background: tokens.color.accent.redMuted,
+                  border: `1px solid ${tokens.color.border.error}`,
+                }}
+              >
                 <Typography sx={{ fontSize: '0.75rem', color: tokens.color.accent.red }}>{error}</Typography>
               </Box>
             )}
@@ -318,7 +330,14 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
                     {connectedWallet}
                   </Typography>
                   {connectedAddress && (
-                    <Typography sx={{ fontSize: '0.6875rem', fontFamily: tokens.font.mono, color: tokens.color.text.tertiary, mt: 0.25 }}>
+                    <Typography
+                      sx={{
+                        fontSize: '0.6875rem',
+                        fontFamily: tokens.font.mono,
+                        color: tokens.color.text.tertiary,
+                        mt: 0.25,
+                      }}
+                    >
                       {connectedAddress}
                     </Typography>
                   )}
@@ -377,11 +396,12 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
                       width: 32,
                       height: 32,
                       borderRadius: tokens.radius.sm,
-                      background: w.brand === 'lace'
-                        ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
-                        : w.brand === '1am'
-                          ? 'linear-gradient(135deg, #0ea5e9, #06b6d4)'
-                          : `linear-gradient(135deg, ${tokens.color.accent.violet}, #6d28d9)`,
+                      background:
+                        w.brand === 'lace'
+                          ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
+                          : w.brand === '1am'
+                            ? 'linear-gradient(135deg, #0ea5e9, #06b6d4)'
+                            : `linear-gradient(135deg, ${tokens.color.accent.violet}, #6d28d9)`,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',

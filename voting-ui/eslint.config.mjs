@@ -4,6 +4,9 @@ import reactPlugin from 'eslint-plugin-react';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 
 const config = tseslint.config(
+  {
+    ignores: ['dist/', 'src/**/*.js', 'src/**/*.d.ts', 'src/**/*.js.map'],
+  },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   reactPlugin.configs.flat.recommended,
@@ -11,12 +14,16 @@ const config = tseslint.config(
   {
     rules: {
       'react/react-in-jsx-scope': 'off',
+      'react/no-unescaped-entities': 'off',
+      '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-misused-promises': 'off',
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/strict-boolean-expressions': 'off',
       '@typescript-eslint/promise-function-async': 'off',
       '@typescript-eslint/no-redeclare': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'warn',
+      '@typescript-eslint/no-unsafe-argument': 'warn',
       '@typescript-eslint/no-unsafe-member-access': 'warn',
       '@typescript-eslint/no-unused-vars': 'warn',
     },

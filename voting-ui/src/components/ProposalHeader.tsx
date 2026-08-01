@@ -12,9 +12,8 @@ interface ProposalHeaderProps {
 
 export const ProposalHeader: React.FC<ProposalHeaderProps> = ({ title, isOpen, contractAddress }) => {
   const [copied, setCopied] = React.useState(false);
-  const shortAddr = contractAddress.length > 16
-    ? `${contractAddress.slice(0, 8)}…${contractAddress.slice(-6)}`
-    : contractAddress;
+  const shortAddr =
+    contractAddress.length > 16 ? `${contractAddress.slice(0, 8)}…${contractAddress.slice(-6)}` : contractAddress;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(contractAddress);
@@ -65,7 +64,15 @@ export const ProposalHeader: React.FC<ProposalHeaderProps> = ({ title, isOpen, c
               }),
             }}
           />
-          <Typography sx={{ fontSize: '0.625rem', fontWeight: 600, color: isOpen ? tokens.color.accent.emerald : tokens.color.text.tertiary, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <Typography
+            sx={{
+              fontSize: '0.625rem',
+              fontWeight: 600,
+              color: isOpen ? tokens.color.accent.emerald : tokens.color.text.tertiary,
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+            }}
+          >
             {isOpen ? 'Active' : 'Closed'}
           </Typography>
         </Box>
