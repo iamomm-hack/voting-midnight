@@ -16,7 +16,7 @@
     "build": "node -e \"fs.rmSync('dist', { recursive: true, force: true })\" && tsc --project tsconfig.build.json && node -e \"fs.cpSync('src/managed', 'dist/managed', { recursive: true }); fs.copyFileSync('src/voting.compact', 'dist/voting.compact')\"",
     "ci": "npm run compact && npm run typecheck && npm run lint && npm run build && npm run test",
     "compact": "compact compile src/voting.compact ./src/managed/voting",
-    "lint": "eslint src",
+    "lint": "eslint src/index.ts src/witnesses.ts \"src/test/**/*.ts\"",
     "prepack": "npm build",
     "test": "vitest run",
     "test:watch": "vitest",
