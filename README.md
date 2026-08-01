@@ -92,9 +92,15 @@ The CI badge at the top links to the full compile/test/build run. Capture the su
 3. compiles the Compact contract and proof assets;
 4. runs contract tests, type checks and lint checks;
 5. builds the production React app;
-6. deploys `voting-ui/dist` to GitHub Pages after a successful push to `main`.
+6. uploads the verified `voting-ui/dist` production artifact.
 
-If Pages has not been enabled for this repository, open **Settings → Pages** and choose **GitHub Actions** as the source once.
+`.github/workflows/deploy-pages.yml` is the dedicated CD workflow. It deploys
+only after CI succeeds and the repository variable `ENABLE_GITHUB_PAGES` is set
+to `true`; it can also be started manually for the first deployment.
+
+For the first deployment, open **Settings → Pages**, choose **GitHub Actions**
+as the source, add the Actions variable `ENABLE_GITHUB_PAGES=true`, and run
+**Deploy Pages** once from the Actions tab.
 
 ## Run locally
 
