@@ -6,7 +6,13 @@ import globals from "globals";
 
 const config = tseslint.config(
   {
-    ignores: ["eslint.config.mjs", "src/managed/"],
+    ignores: [
+      "eslint.config.mjs",
+      "src/managed/",
+      "src/**/*.js",
+      "src/**/*.d.ts",
+      "src/**/*.js.map",
+    ],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
