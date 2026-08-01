@@ -40,12 +40,17 @@ jobs:
       - name: Compile Compact contract
         run: npm run compact --workspace=@midnight-ntwrk/voting-contract
 
-      - name: Test Compact contract
-        run: |
-          npm run typecheck --workspace=@midnight-ntwrk/voting-contract
-          npm run lint --workspace=@midnight-ntwrk/voting-contract
-          npm run build --workspace=@midnight-ntwrk/voting-contract
-          npm test
+      - name: Type-check Compact bindings and tests
+        run: npm run typecheck --workspace=@midnight-ntwrk/voting-contract
+
+      - name: Lint Compact contract package
+        run: npm run lint --workspace=@midnight-ntwrk/voting-contract
+
+      - name: Build Compact contract package
+        run: npm run build --workspace=@midnight-ntwrk/voting-contract
+
+      - name: Run Compact contract tests
+        run: npm test
 
       - name: Check API package
         run: npm run ci --workspace=@midnight-ntwrk/voting-api
