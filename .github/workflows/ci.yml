@@ -47,7 +47,7 @@ jobs:
         run: npm run build --workspace=@midnight-ntwrk/voting-contract
 
       - name: Run Compact contract tests
-        run: npm test
+        run: npm run test:ci --workspace=@midnight-ntwrk/voting-contract
 
       - name: Check API package
         run: npm run ci --workspace=@midnight-ntwrk/voting-api

@@ -19,6 +19,7 @@
     "lint": "eslint src/index.ts src/witnesses.ts \"src/test/**/*.ts\"",
     "prepack": "npm build",
     "test": "vitest run",
+    "test:ci": "vitest run --reporter=default --reporter=github-actions",
     "test:watch": "vitest",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
