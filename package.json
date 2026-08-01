@@ -18,6 +18,10 @@
   },
   "scripts": {
     "build": "npm run build --workspaces",
+    "test": "npm run test --workspace=@midnight-ntwrk/voting-contract -- --run",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "ci": "npm run ci --workspace=@midnight-ntwrk/voting-contract && npm run ci --workspace=@midnight-ntwrk/voting-api && npm run ci --workspace=@midnight-ntwrk/voting-cli && npm run ci --workspace=@midnight-ntwrk/voting-ui && npm run build --workspace=@midnight-ntwrk/voting-ui",
     "deploy-direct": "npm run deploy-direct --workspace=@midnight-ntwrk/voting-cli",
     "preprod-remote": "npm run preprod-remote --workspace=@midnight-ntwrk/voting-cli"
   },
