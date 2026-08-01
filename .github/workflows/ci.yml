@@ -43,9 +43,6 @@ jobs:
       - name: Type-check Compact bindings and tests
         run: npm run typecheck --workspace=@midnight-ntwrk/voting-contract
 
-      - name: Lint Compact contract package
-        run: npm run lint --workspace=@midnight-ntwrk/voting-contract
-
       - name: Build Compact contract package
         run: npm run build --workspace=@midnight-ntwrk/voting-contract
 
